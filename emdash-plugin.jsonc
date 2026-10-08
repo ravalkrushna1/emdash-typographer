@@ -19,7 +19,6 @@
 	"allowedHosts": [],
 	"storage": {},
 	"admin": {
-		"pages": [{ "path": "/settings", "label": "Typographer", "icon": "settings" }],
 		"settingsSchema": {
 			"locale": {
 				"type": "select",

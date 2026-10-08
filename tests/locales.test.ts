@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import manifestText from "../emdash-plugin.jsonc?raw";
 import { FRACTIONS, SUPPORTED_LOCALES, resolveLocale } from "../src/locales.js";
+import { RULE_DEFAULTS, RULE_IDS } from "../src/rules.js";
 
 describe("resolveLocale", () => {
 	it("uses the entry locale when there is no override", () => {
@@ -55,4 +56,11 @@ describe("locale table", () => {
 
 it("offers exactly the supported locales in the settings schema", () => {
 	for (const tag of SUPPORTED_LOCALES) expect(manifestText).toContain(`{ "value": "${tag}"`);
+});
+
+it("declares one setting per rule plus locale, with the rule defaults", () => {
+	const manifest = JSON.parse(manifestText.replace(/^\s*\/\/.*$/gm, ""));
+	const schema: Record<string, { default: unknown }> = manifest.admin.settingsSchema;
+	expect(Object.keys(schema).sort()).toEqual([...RULE_IDS, "locale"].sort());
+	for (const id of RULE_IDS) expect(schema[id]?.default).toBe(RULE_DEFAULTS[id]);
 });

@@ -36,7 +36,7 @@ If you edit the entry while working, the host rejects the result: scan again.
 
 ## Settings
 
-Plugins → Typographer → Settings.
+In the admin, open **Plugins** and click the gear (**Settings**) button on Typographer. EmDash builds this form from the plugin's settings schema; it needs the manage-plugins permission.
 
 - **Rule defaults** — which rules are pre-selected in the panel. On by default: spacing, symbols, ellipsis, dashes, quotes, non-breaking spaces. Off by default: ranges, multiplication, fractions, primes.
 - **Quote style** — `auto` (the entry's language, falling back to English) or a fixed language from the table below.

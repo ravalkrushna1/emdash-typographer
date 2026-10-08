@@ -189,38 +189,17 @@ describe("scanResult", () => {
 	});
 });
 
-const ALL_OFF = Object.fromEntries(
-	["spacing", "symbols", "ellipsis", "dashes", "ranges", "multiplication", "fractions", "primes", "quotes", "nbsp"].map(
-		(id) => [id, false],
-	),
-);
-
 describe("Typographer settings", () => {
-	it("shows the defaults with risky rules off", async () => {
-		host = await createPluginRuntimeTestHost();
-		const page = await host.admin.loadPage("/settings");
-		const blocks = text(page);
-		expect(blocks).toContain("Typographer defaults");
-		expect(blocks).toMatch(/"action_id":"ranges"[^}]*"initial_value":false/);
-		expect(blocks).toMatch(/"action_id":"quotes"[^}]*"initial_value":true/);
-	});
-
-	it("saves valid settings and the panel uses them", async () => {
+	it("the panel honours values saved through the host's settings form", async () => {
 		const { host, entry } = await setup("posts");
-		const saved = await host.admin.submit("/settings", "save", { ...ALL_OFF, ranges: true, quotes: true, locale: "de" });
-		expect(saved.toast).toEqual({ type: "success", message: "Settings saved" });
+		const saved = await host.actions.plugin.updateSettings({ ranges: true, locale: "de" });
+		expect(saved.success).toBe(true);
+		const rejected = await host.actions.plugin.updateSettings({ locale: "xx" });
+		expect(rejected.success).toBe(false);
 
 		const draft = await host.admin.captureEditorDraft("posts", entry.id, { title: '"Seiten" 10-20' }, { contentLocale: "en" });
 		const scan = await host.admin.actEditorPanel("typographer", "posts", entry.id, "scan", { contentLocale: "en", draft });
 		expect(text(scan)).toMatch(/"action_id":"ranges"[^}]*"initial_value":true/);
 		expect(text(scan)).toContain("\u201e");
-	});
-
-	it("rejects an unknown locale without saving", async () => {
-		host = await createPluginRuntimeTestHost();
-		const bad = await host.admin.submit("/settings", "save", { ...ALL_OFF, locale: "xx" });
-		expect(bad.toast?.type).toBe("error");
-		const page = await host.admin.loadPage("/settings");
-		expect(text(page)).toMatch(/"action_id":"quotes"[^}]*"initial_value":true/);
 	});
 });

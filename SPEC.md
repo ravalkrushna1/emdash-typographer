@@ -55,8 +55,11 @@ Verified against `emdash-cms/emdash` source at `00b5cfa` (2026-10-08).
   - Adding slugs later likely widens the trust contract (major bump, admins re-consent),
     so the v1 list is deliberately generous. Confirm how the CLI classifies it before
     the first post-1.0 scope change.
-- Settings page at `/settings` (route `admin`), `settingsSchema` for rule defaults and
-  locale override. No secrets.
+- `settingsSchema` for rule defaults and locale override. No secrets, no custom settings
+  page: EmDash generates the settings form from the schema (plugin manager → gear), for
+  sandboxed and registry plugins alike, supports `select` and `boolean`, validates
+  values against the schema, and stores them under the keys `ctx.settings` reads. A
+  Block Kit page would have been a second screen for the same keys.
 
 Why no wildcard workaround: there isn't one. The manifest is fixed at publish time and
 the host enforces explicit scope. README states the limit plainly.
@@ -65,8 +68,8 @@ the host enforces explicit scope. README states the limit plainly.
 
 ```
 emdash-plugin.jsonc   manifest
-src/plugin.ts         routes only: "admin" (settings) and "panel" (panel)
-src/ui.ts             Block Kit: panel states, settings page
+src/plugin.ts         one route: "panel"; reads settings, no settings route
+src/ui.ts             Block Kit: panel states
 src/portable-text.ts  join → fix → split; plain fields pass straight through
 src/rules.ts          pure rules: text in → edits out
 src/locales.ts        pure data: quote pairs, French spacing, units, elision words
@@ -183,7 +186,7 @@ Every field gets the whole correct fix or is left alone, and the editor is told 
 | Unsupported locale | "No quote style for *sw* yet — using English quotes" | Fallback `en` |
 | Malformed interaction | "Something went wrong — reopen the panel" | hand-validated; never throws |
 | Edited while working | Host's stale message | Help text: "Edited while scanning? Scan again." |
-| Invalid settings | Inline error, nothing saved | hand-validated before `ctx.settings.set` |
+| Invalid settings | Host form error, nothing saved | the host validates against `settingsSchema`; `readSettings` ignores non-boolean rule values |
 
 Logs never contain entry content — only field slugs, rule names, error messages.
 
@@ -196,7 +199,7 @@ Test-first. Every bug becomes a regression row.
 | `rules.test.ts` | Table-driven change / never-touch cases per rule (~150) |
 | `locales.test.ts` | Complete pairs per language; unknown → `en` |
 | `portable-text.test.ts` | Cross-span quotes, code untouched, keys/marks preserved, cross-span edits dropped, guard catches tampering |
-| `plugin.test.ts` | `createPluginRuntimeTestHost`: load → act → submit → `applyEditorDraftPatch` passes host validation; oversized field; clean draft; settings save + validation; missing-field tolerance across collections |
+| `plugin.test.ts` | `createPluginRuntimeTestHost`: load → act → submit → `applyEditorDraftPatch` passes host validation; oversized field; clean draft; settings saved through the host's settings handler reach the panel; missing-field tolerance across collections |
 | Manual, per release | Real local EmDash blog site, long real article; source of README screenshots |
 
 ## Release
