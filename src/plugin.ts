@@ -68,7 +68,8 @@ const plugin: SandboxedPlugin = {
 					polishFields(draft.fields, draft.fieldDefinitions, selectRules(rules), { locale: locale.style }, log);
 
 				if (input.type === "block_action" && input.action_id === "scan") {
-					return scanResult(run(new Set(RULE_IDS)).counts, settings.rules, locale);
+					const scanned = run(new Set(RULE_IDS));
+					return scanResult(scanned.results, scanned.counts, settings.rules, locale);
 				}
 				if (input.type === "form_submit" && input.action_id === "polish") {
 					const chosen = new Set(RULE_IDS.filter((id) => input.values[id] === true));

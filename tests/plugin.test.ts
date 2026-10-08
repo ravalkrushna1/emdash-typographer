@@ -1,5 +1,7 @@
 import { afterEach, describe, expect, it } from "vitest";
 
+import { scanResult } from "../src/ui.js";
+import { resolveLocale } from "../src/locales.js";
 import { createPluginRuntimeTestHost } from "@emdash-cms/plugin-test";
 
 type Host = Awaited<ReturnType<typeof createPluginRuntimeTestHost>>;
@@ -170,5 +172,19 @@ describe("Typographer panel", () => {
 				draft: { fields: "nope" } as never,
 			}),
 		).rejects.toThrow(/Invalid editor draft/);
+	});
+});
+
+describe("scanResult", () => {
+	const locale = resolveLocale(null, "en");
+	it.each([
+		["too-large", "too long to polish"],
+		["failed", "Couldn't safely polish"],
+	] as const)("never says clean when a field is %s", (status, message) => {
+		const out = JSON.stringify(
+			scanResult([{ slug: "content", label: "Content", status, counts: { quotes: 3 } }], {}, new Set(), locale).blocks,
+		);
+		expect(out).toContain(message);
+		expect(out).not.toContain("Looks clean");
 	});
 });

@@ -43,7 +43,7 @@ Verified against `emdash-cms/emdash` source at `00b5cfa` (2026-10-08).
   change, the DID never does). Registry name: `@krushnaraval.bsky.social/typographer`.
 - Capabilities: `admin.editor-draft:read`, `admin.editor-draft:patch`. Nothing else —
   no content, network, or hook capabilities. Smallest possible consent prompt.
-- One editor panel, id `typographer`, route `editor/typographer`.
+- One editor panel, id `typographer`, route `panel`.
   - `collections` (28 of 64): template slugs `posts`, `pages`, `projects`, plus
     `articles`, `news`, `blog`, `stories`, `docs`, `guides`, `tutorials`, `events`,
     `products`, `case_studies`, `portfolio`, `services`, `recipes`, `podcasts`,
@@ -65,7 +65,7 @@ the host enforces explicit scope. README states the limit plainly.
 
 ```
 emdash-plugin.jsonc   manifest
-src/plugin.ts         routes only: "admin" (settings) and "editor/typographer" (panel)
+src/plugin.ts         routes only: "admin" (settings) and "panel" (panel)
 src/ui.ts             Block Kit: panel states, settings page
 src/portable-text.ts  join → fix → split; plain fields pass straight through
 src/rules.ts          pure rules: text in → edits out

@@ -40,18 +40,43 @@ export function panelIntro(locale: ResolvedLocale): BlockResponse {
 
 const total = (counts: Counts) => Object.values(counts).reduce((sum, n) => sum + n, 0);
 
-export function scanResult(counts: Counts, enabled: ReadonlySet<RuleId>, locale: ResolvedLocale): BlockResponse {
+function problemBanners(results: FieldResult[]): Block[] {
+	const blocks: Block[] = [];
+	for (const result of results) {
+		if (result.status === "too-large") {
+			blocks.push({
+				type: "banner",
+				variant: "alert",
+				title: `${result.label} is too long to polish in one go (64 KB limit).`,
+				description: "Other fields were polished.",
+			});
+		} else if (result.status === "failed") {
+			blocks.push({
+				type: "banner",
+				variant: "error",
+				title: `Couldn't safely polish ${result.label}.`,
+				description: "Nothing was changed in it.",
+			});
+		}
+	}
+	return blocks;
+}
+
+export function scanResult(results: FieldResult[], counts: Counts, enabled: ReadonlySet<RuleId>, locale: ResolvedLocale): BlockResponse {
 	const found = RULE_IDS.filter((id) => (counts[id] ?? 0) > 0);
+	const problems = problemBanners(results);
 	if (found.length === 0) {
 		return {
 			blocks: [
-				{ type: "banner", title: "Looks clean ✓", description: "No typographic fixes found." },
+				...problems,
+				...(problems.length === 0 ? [{ type: "banner" as const, title: "Looks clean ✓", description: "No typographic fixes found." }] : []),
 				scanButton("Scan again"),
 			],
 		};
 	}
 	return {
 		blocks: [
+			...problems,
 			{ type: "header", text: `Found ${total(counts)} fixes` },
 			localeLine(locale),
 			{
@@ -72,24 +97,7 @@ export function scanResult(counts: Counts, enabled: ReadonlySet<RuleId>, locale:
 }
 
 export function polishResult(results: FieldResult[], counts: Counts): BlockResponse {
-	const blocks: Block[] = [];
-	for (const result of results) {
-		if (result.status === "too-large") {
-			blocks.push({
-				type: "banner",
-				variant: "alert",
-				title: `${result.label} is too long to polish in one go (64 KB limit).`,
-				description: "Other fields were polished.",
-			});
-		} else if (result.status === "failed") {
-			blocks.push({
-				type: "banner",
-				variant: "error",
-				title: `Couldn't safely polish ${result.label}.`,
-				description: "Nothing was changed in it.",
-			});
-		}
-	}
+	const blocks = problemBanners(results);
 	const changed = results.filter((result) => result.status === "changed").map((result) => result.label);
 	blocks.push(
 		changed.length > 0
