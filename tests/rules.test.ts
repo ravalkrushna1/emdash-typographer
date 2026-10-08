@@ -14,7 +14,7 @@ describe("spacing", () => {
 		["one.  Two", "one. Two"],
 	])("changes %j → %j", (input, output) => expect(fix(spacing, input)).toBe(output));
 
-	it.each(["  leading", "trailing  ", "a\u00a0b", "single space"])(
+	it.each(["  leading", "trailing  ", "a\u00A0\u00A0b", "single space"])(
 		"never touches %j",
 		(input) => expect(fix(spacing, input)).toBe(input),
 	);
