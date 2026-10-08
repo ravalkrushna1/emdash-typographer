@@ -55,9 +55,12 @@ describe("dashes", () => {
 		["and then--", "and then—"],
 		["London - Paris", "London – Paris"],
 		["2 - 3", "2 – 3"],
+		['"Yes"--she paused', "\"Yes\"—she paused"],
+		["'Yes'--she paused", "'Yes'—she paused"],
+		['He said "no"--twice.', 'He said "no"—twice.'],
 	])("changes %j → %j", (input, output) => expect(fix(dashes, input)).toBe(output));
 
-	it.each(["--force", "npm i --save-dev", "a --- b", "- list item", "well-known", "x-y", 'the "--force" flag', "(--verbose)"])(
+	it.each(["--force", "npm i --save-dev", "a --- b", "- list item", "well-known", "x-y", 'the "--force" flag', "(--verbose)", "'--quiet'"])(
 		"never touches %j",
 		(input) => expect(fix(dashes, input)).toBe(input),
 	);
@@ -79,6 +82,10 @@ describe("quotes", () => {
 		['"hi" 👍', "“hi” 👍"],
 		['👍 "hi"', "👍 “hi”"],
 		['😀"hi"', "😀“hi”"],
+		["parents'/guardians' consent", "parents’/guardians’ consent"],
+		[`"That car is the Joneses'"`, "“That car is the Joneses’”"],
+		["the students'—and teachers'—books", "the students’—and teachers’—books"],
+		["the dogs'-only park", "the dogs’-only park"],
 	])("changes %j → %j", (input, output) => expect(fix(quotes, input)).toBe(output));
 
 	it.each(["“already” ‘curly’", "no quotes here", `5'10"`, 'a 12" pizza', "the 12' boat"])("never touches %j", (input) =>
@@ -213,6 +220,11 @@ describe("all rules together", () => {
 		expect(run(`He is 5'10" and said "hi"`)).toBe("He is 5′10″ and said “hi”");
 	});
 
+	it.each([
+		[`"Yes"--she paused--"no."`, "“Yes”—she paused—“no.”"],
+		["the students'--and teachers'--books", "the students’—and teachers’—books"],
+	])("handles dialogue dashes next to quotes: %j", (input, output) => expect(run(input)).toBe(output));
+
 	it("closes a quote after a dash", () => {
 		expect(run(`"I was going to--" she said`)).toBe("“I was going to—” she said");
 	});
@@ -227,6 +239,8 @@ describe("all rules together", () => {
 		['他说"你好"', "zh"],
 		[`"I was going to--" she said`, "en"],
 		['😀"hi"', "en"],
+		[`"Yes"--she paused--"no."`, "en"],
+		["the students'--and teachers'--books", "en"],
 	])("is idempotent on %j (%s)", (input, locale) => {
 		const once = run(input, locale);
 		expect(run(once, locale)).toBe(once);

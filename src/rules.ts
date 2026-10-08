@@ -43,7 +43,11 @@ export const dashes: Rule = (text) => [
 	...matches(text, /(?<!-)--(?!-)/g, (_, at) => {
 		const before = text[at - 1];
 		const after = text[at + 2];
-		const startsWord = before === undefined || /[\s("'“‘«[]/.test(before);
+		// A straight quote opens a word only after whitespace, an opener or the text start; otherwise it closes one.
+		const startsWord =
+			before === undefined ||
+			/[\s(“‘«[]/.test(before) ||
+			(/["']/.test(before) && (at < 2 || /[\s([{]/.test(text[at - 2] ?? "")));
 		// "--force": a command-line flag, not a dash.
 		if (startsWord && after !== undefined && WORDISH.test(after)) return null;
 		return { start: at, end: at + 2, text: "—" };
@@ -127,6 +131,7 @@ export const quotes: Rule = (text, { locale }) => {
 			(WORDISH.test(prev) || CLOSING_PUNCTUATION.test(prev) || closers.has(prev) || before === "close" || before === "apostrophe");
 		let opens: boolean;
 		if (beforeClosing && (isOpen || afterClosing)) opens = false;
+		else if (afterClosing && next !== undefined && !WORDISH.test(next)) opens = false; // students'/dogs'-only
 		else if (afterOpening || (prev !== undefined && DASH.test(prev) && next !== undefined && WORDISH.test(next))) opens = true;
 		else opens = !isOpen; // no space on either side (CJK, emoji, after code): alternate
 		depth[kind] = opens ? depth[kind] + 1 : Math.max(0, depth[kind] - 1);
