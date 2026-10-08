@@ -57,7 +57,7 @@ describe("dashes", () => {
 		["2 - 3", "2 – 3"],
 	])("changes %j → %j", (input, output) => expect(fix(dashes, input)).toBe(output));
 
-	it.each(["--force", "npm i --save-dev", "a --- b", "- list item", "well-known", "x-y"])(
+	it.each(["--force", "npm i --save-dev", "a --- b", "- list item", "well-known", "x-y", 'the "--force" flag', "(--verbose)"])(
 		"never touches %j",
 		(input) => expect(fix(dashes, input)).toBe(input),
 	);

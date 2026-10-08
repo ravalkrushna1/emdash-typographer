@@ -1,4 +1,5 @@
 import type { LocaleStyle } from "./locales.js";
+import { hasListMarkers } from "./rules.js";
 
 /** Replace `[start, end)` with `text`. `start === end` is an insertion. */
 export interface Edit {
@@ -9,6 +10,8 @@ export interface Edit {
 
 export interface RuleContext {
 	locale: LocaleStyle;
+	/** Whether the whole field uses (a)/(b) list markers; rules check their own text when unset. */
+	listMarkers?: boolean;
 }
 
 export type Rule = (text: string, ctx: RuleContext) => Edit[];
@@ -248,6 +251,15 @@ export interface FieldResult {
 
 export type FieldLog = (message: string, data: Record<string, string>) => void;
 
+/** All text in a field: the string itself, or every span, one line per block. */
+function fieldText(value: unknown): string {
+	if (typeof value === "string") return value;
+	if (!Array.isArray(value)) return "";
+	return value
+		.map((node) => (isTextBlock(node) ? node.children.map((child) => (isSpan(child) ? child.text : "")).join("") : ""))
+		.join("\n");
+}
+
 const byteLength = (value: unknown) => new TextEncoder().encode(JSON.stringify(value)).length;
 
 function polishField(
@@ -284,7 +296,8 @@ export function polishFields(
 	for (const definition of definitions) {
 		if (!(definition.slug in fields)) continue;
 		try {
-			const result = polishField(definition, fields[definition.slug], rules, ctx);
+			const value = fields[definition.slug];
+			const result = polishField(definition, value, rules, { ...ctx, listMarkers: hasListMarkers(fieldText(value)) });
 			results.push(result);
 			if (result.status === "changed") addCounts(counts, result.counts);
 		} catch (error) {

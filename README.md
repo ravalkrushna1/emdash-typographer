@@ -11,9 +11,9 @@ Rules run in this order.
 | # | Rule | Default | Changes | Never touches |
 |---|---|---|---|---|
 | 1 | Spacing | on | 2+ spaces → 1 | intentional non-breaking spaces |
-| 2 | Symbols | on | `(c)` `(r)` `(tm)` → `©` `®` `™` | `(c)` in a paragraph that also has `(a)` or `(b)` |
+| 2 | Symbols | on | `(c)` `(r)` `(tm)` → `©` `®` `™` | `(c)` in a field that also has `(a)` or `(b)` |
 | 3 | Ellipsis | on | `...` → `…` | `....` and longer |
-| 4 | Dashes | on | `--` → `—`; ` - ` between words → ` – ` | `--flag`, `---`, line-start hyphen |
+| 4 | Dashes | on | `--` → `—`; ` - ` between words → ` – ` | `--flag` (also `"--flag"`, `(--flag)`), `---`, line-start hyphen |
 | 5 | Ranges | off | `10-20`, `1990-1995` → en dash | `2026-10-08`, `555-123-4567`, `B-52`, first > second (`3-2`) |
 | 6 | Multiplication | off | `1920x1080`, `3 x 4` → `×` | `0x1F`, `X200x300` |
 | 7 | Fractions | off | `1/2 1/4 3/4 1/3 2/3` → `½ ¼ ¾ ⅓ ⅔` | `1/2/2026`, `11/2`, `1/20` |

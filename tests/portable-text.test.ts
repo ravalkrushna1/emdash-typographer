@@ -158,4 +158,12 @@ describe("polishFields", () => {
 		expect(results[0]?.status).toBe("changed");
 		expect(sameStructure(content, results[0]?.value)).toBe(true);
 	});
+
+	it("treats (c) as a list marker when another block in the field has (a) or (b)", () => {
+		const legal = [block("b1", [span("s1", "(a) one")]), block("b2", [span("s2", "(b) two")]), block("b3", [span("s3", "(c) three")])];
+		const copyright = [block("b1", [span("s1", "(c) 2026 Acme")])];
+		const run = (content: unknown) => polishFields({ content }, definitions, all, ctx, vi.fn()).results[0];
+		expect(run(legal)?.status).toBe("clean");
+		expect(texts(run(copyright)?.value)).toEqual([["© 2026 Acme"]]);
+	});
 });

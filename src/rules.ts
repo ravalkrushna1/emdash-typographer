@@ -23,9 +23,11 @@ export const spacing: Rule = (text) =>
 
 const SYMBOLS: Readonly<Record<string, string>> = { c: "©", r: "®", tm: "™" };
 
-export const symbols: Rule = (text) => {
-	// "(c)" after "(a)" or "(b)" is a list marker, not a copyright sign.
-	const isList = /\((?:a|b)\)/i.test(text);
+/** "(c)" next to "(a)" or "(b)" is a list marker, not a copyright sign. */
+export const hasListMarkers = (text: string) => /\((?:a|b)\)/i.test(text);
+
+export const symbols: Rule = (text, ctx) => {
+	const isList = ctx.listMarkers ?? hasListMarkers(text);
 	return matches(text, /\((c|r|tm)\)/gi, (match, at) => {
 		const key = (match[1] ?? "").toLowerCase();
 		if (key === "c" && isList) return null;
@@ -41,7 +43,7 @@ export const dashes: Rule = (text) => [
 	...matches(text, /(?<!-)--(?!-)/g, (_, at) => {
 		const before = text[at - 1];
 		const after = text[at + 2];
-		const startsWord = before === undefined || /\s/.test(before);
+		const startsWord = before === undefined || /[\s("'“‘«[]/.test(before);
 		// "--force": a command-line flag, not a dash.
 		if (startsWord && after !== undefined && WORDISH.test(after)) return null;
 		return { start: at, end: at + 2, text: "—" };
