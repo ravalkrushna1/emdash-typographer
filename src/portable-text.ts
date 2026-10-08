@@ -22,7 +22,7 @@ export interface Piece {
 }
 
 /** Stands in for an inline object (line break, embed) inside a paragraph. */
-export const OBJECT_PLACEHOLDER = "￼";
+export const OBJECT_PLACEHOLDER = "\uFFFC";
 
 export class RuleError extends Error {
 	constructor(
@@ -34,7 +34,7 @@ export class RuleError extends Error {
 	}
 }
 
-const URL_OR_EMAIL = /\b(?:https?:\/\/|www\.)[^\s<>"“”«»]+|[\w.+-]+@[\w-]+(?:\.[\w-]+)+/giu;
+const URL_OR_EMAIL = /\b(?:https?:\/\/|www\.)[^\s<>"“”«»]+|[\w.+-]{1,64}@[\w-]{1,255}(?:\.[\w-]+)+/giu;
 
 interface Bounds {
 	start: number;
@@ -161,4 +161,140 @@ function applyEdits(pieces: readonly Piece[], bounds: readonly Bounds[], edits: 
 		piece.text = piece.text.slice(0, edit.start - base) + edit.text + piece.text.slice(edit.end - base);
 	}
 	return next;
+}
+
+interface SpanNode {
+	_type: "span";
+	text: string;
+	marks?: unknown;
+}
+
+interface TextBlockNode {
+	_type: "block";
+	children: unknown[];
+}
+
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+	typeof value === "object" && value !== null && !Array.isArray(value);
+
+const isSpan = (value: unknown): value is SpanNode =>
+	isRecord(value) && value._type === "span" && typeof value.text === "string";
+
+const isTextBlock = (value: unknown): value is TextBlockNode =>
+	isRecord(value) && value._type === "block" && Array.isArray(value.children);
+
+const hasCodeMark = (span: SpanNode) => Array.isArray(span.marks) && span.marks.includes("code");
+
+function addCounts(into: Counts, from: Counts): void {
+	for (const [id, count] of Object.entries(from)) into[id] = (into[id] ?? 0) + count;
+}
+
+export function polishPortableText(
+	value: unknown,
+	rules: readonly NamedRule[],
+	ctx: RuleContext,
+): { value: unknown; counts: Counts } {
+	if (!Array.isArray(value)) return { value, counts: {} };
+	const counts: Counts = {};
+	const polished = value.map((node) => {
+		if (!isTextBlock(node)) return node;
+		const pieces: Piece[] = node.children.map((child) =>
+			isSpan(child) ? { text: child.text, locked: hasCodeMark(child) } : { text: OBJECT_PLACEHOLDER, locked: true },
+		);
+		const result = runRules(pieces, rules, ctx);
+		if (Object.keys(result.counts).length === 0) return node;
+		addCounts(counts, result.counts);
+		return {
+			...node,
+			children: node.children.map((child, index) =>
+				isSpan(child) ? { ...child, text: result.pieces[index]?.text ?? child.text } : child,
+			),
+		};
+	});
+	return { value: polished, counts };
+}
+
+function blankSpanText(value: unknown): unknown {
+	if (Array.isArray(value)) return value.map(blankSpanText);
+	if (!isRecord(value)) return value;
+	const isSpanNode = value._type === "span";
+	return Object.fromEntries(
+		Object.entries(value).map(([key, inner]) => [key, isSpanNode && key === "text" ? "" : blankSpanText(inner)]),
+	);
+}
+
+/** True when two values differ in nothing but span text. */
+export function sameStructure(before: unknown, after: unknown): boolean {
+	return JSON.stringify(blankSpanText(before)) === JSON.stringify(blankSpanText(after));
+}
+
+export const MAX_FIELD_BYTES = 64 * 1024;
+
+export interface FieldDefinition {
+	slug: string;
+	label: string;
+	type: string;
+}
+
+export type FieldStatus = "changed" | "clean" | "too-large" | "failed" | "skipped";
+
+export interface FieldResult {
+	slug: string;
+	label: string;
+	status: FieldStatus;
+	value?: unknown;
+	counts: Counts;
+}
+
+export type FieldLog = (message: string, data: Record<string, string>) => void;
+
+const byteLength = (value: unknown) => new TextEncoder().encode(JSON.stringify(value)).length;
+
+function polishField(
+	definition: FieldDefinition,
+	value: unknown,
+	rules: readonly NamedRule[],
+	ctx: RuleContext,
+): FieldResult {
+	const base = { slug: definition.slug, label: definition.label };
+	let polished: { value: unknown; counts: Counts };
+	if ((definition.type === "string" || definition.type === "text") && typeof value === "string") {
+		const result = polishText(value, rules, ctx);
+		polished = { value: result.text, counts: result.counts };
+	} else if (definition.type === "portableText") {
+		polished = polishPortableText(value, rules, ctx);
+		if (!sameStructure(value, polished.value)) throw new RuleError("structure-guard", "structure changed");
+	} else {
+		return { ...base, status: "skipped", counts: {} };
+	}
+	if (Object.keys(polished.counts).length === 0) return { ...base, status: "clean", counts: {} };
+	if (byteLength(polished.value) > MAX_FIELD_BYTES) return { ...base, status: "too-large", counts: polished.counts };
+	return { ...base, status: "changed", value: polished.value, counts: polished.counts };
+}
+
+export function polishFields(
+	fields: Record<string, unknown>,
+	definitions: readonly FieldDefinition[],
+	rules: readonly NamedRule[],
+	ctx: RuleContext,
+	log: FieldLog,
+): { results: FieldResult[]; counts: Counts } {
+	const results: FieldResult[] = [];
+	const counts: Counts = {};
+	for (const definition of definitions) {
+		if (!(definition.slug in fields)) continue;
+		try {
+			const result = polishField(definition, fields[definition.slug], rules, ctx);
+			results.push(result);
+			if (result.status === "changed") addCounts(counts, result.counts);
+		} catch (error) {
+			log("Typographer could not polish a field", {
+				field: definition.slug,
+				rule: error instanceof RuleError ? error.rule : "unknown",
+				error: error instanceof Error ? error.name : "Error",
+			});
+			results.push({ slug: definition.slug, label: definition.label, status: "failed", counts: {} });
+		}
+	}
+	return { results, counts };
 }
