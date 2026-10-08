@@ -1,0 +1,21 @@
+{
+	"$schema": "./node_modules/@emdash-cms/plugin-cli/schemas/emdash-plugin.schema.json",
+
+	"slug": "typographer",
+	"publisher": "did:plc:2vgwjmqe2e6u72wl5uyumrc2",
+
+	"license": "MIT",
+	"author": { "name": "Krushna Raval" },
+	"security": { "url": "https://github.com/ravalkrushna1/emdash-typographer/security/advisories/new" },
+	"description": "Polishes quotes, dashes, ellipses and spacing in the editor — preview before apply.",
+	"repo": "https://github.com/ravalkrushna1/emdash-typographer",
+
+	// Trust contract — what runtime APIs the plugin asks for.
+	// Empty arrays mean no extra privileges beyond logging,
+	// KV, and route/hook registration. Changing these between
+	// releases requires a version bump because installed
+	// users have consented to the old contract.
+	"capabilities": [],
+	"allowedHosts": [],
+	"storage": {}
+}
