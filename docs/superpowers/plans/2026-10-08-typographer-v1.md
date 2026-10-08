@@ -677,7 +677,7 @@ describe("spacing", () => {
 		["one.  Two", "one. Two"],
 	])("changes %j → %j", (input, output) => expect(fix(spacing, input)).toBe(output));
 
-	it.each(["  leading", "trailing  ", "a  b", "single space"])(
+	it.each(["  leading", "trailing  ", "a\u00A0\u00A0b", "single space"])(
 		"never touches %j",
 		(input) => expect(fix(spacing, input)).toBe(input),
 	);
@@ -853,12 +853,12 @@ describe("quotes", () => {
 
 describe("nbsp", () => {
 	it.each([
-		["10 kg", "10 kg"],
-		["5 min", "5 min"],
-		["50 %", "50 %"],
-		["90 km/h", "90 km/h"],
-		["₹ 500", "₹ 500"],
-		["5 €", "5 €"],
+		["10 kg", "10\u00A0kg"],
+		["5 min", "5\u00A0min"],
+		["50 %", "50\u00A0%"],
+		["90 km/h", "90\u00A0km/h"],
+		["₹ 500", "₹\u00A0500"],
+		["5 €", "5\u00A0€"],
 	])("changes %j → %j", (input, output) => expect(fix(nbsp, input)).toBe(output));
 
 	it.each(["5 in total", "10 kgs", "Room 5 A", "Hello!", "Note: yes", "12:30"])(
@@ -867,17 +867,17 @@ describe("nbsp", () => {
 	);
 
 	it.each([
-		["Bonjour !", "Bonjour !"],
-		["Bonjour!", "Bonjour !"],
-		["Vraiment ?", "Vraiment ?"],
-		["Quoi ?!", "Quoi ?!"],
-		["Note : oui", "Note : oui"],
-		["Note: oui", "Note : oui"],
-		["«Bonjour»", "« Bonjour »"],
-		["« Bonjour »", "« Bonjour »"],
+		["Bonjour !", "Bonjour\u202F!"],
+		["Bonjour!", "Bonjour\u202F!"],
+		["Vraiment ?", "Vraiment\u202F?"],
+		["Quoi ?!", "Quoi\u202F?!"],
+		["Note : oui", "Note\u00A0: oui"],
+		["Note: oui", "Note\u00A0: oui"],
+		["«Bonjour»", "«\u202FBonjour\u202F»"],
+		["« Bonjour »", "«\u202FBonjour\u202F»"],
 	])("in French changes %j → %j", (input, output) => expect(fix(nbsp, input, "fr")).toBe(output));
 
-	it.each(["12:30", "Super :)", "Clin d'œil ;)", "Bonjour !"])(
+	it.each(["12:30", "Super :)", "Clin d'œil ;)", "Bonjour\u202F!"])(
 		"in French never touches %j",
 		(input) => expect(fix(nbsp, input, "fr")).toBe(input),
 	);
@@ -901,7 +901,7 @@ Append to `src/rules.ts`:
 
 ```ts
 /** A quote opens after these (or at the start of the text). */
-const OPENS_AFTER = /[\s([{—–\-/  ￼]/u;
+const OPENS_AFTER = /[\s([{—–\-/\u00A0\u202F￼]/u;
 
 function startsElision(text: string, from: number): boolean {
 	const word = /^\p{L}+/u.exec(text.slice(from))?.[0]?.toLowerCase();
@@ -948,8 +948,8 @@ const CURRENCY_CLASS = CURRENCIES.map(escapeRe).join("");
 const SPACE_AFTER_CURRENCY = new RegExp(`(?<=[${CURRENCY_CLASS}]) (?=\\d)`, "gu");
 const SPACE_BEFORE_CURRENCY = new RegExp(`(?<=\\d) (?=[${CURRENCY_CLASS}](?![\\p{L}\\p{N}]))`, "gu");
 
-const NBSP = " ";
-const NARROW_NBSP = " ";
+const NBSP = "\u00A0";
+const NARROW_NBSP = "\u202F";
 const HIGH_PUNCTUATION = ";!?:";
 
 function frenchSpacing(text: string): Edit[] {
@@ -1799,7 +1799,7 @@ describe("Typographer panel", () => {
 			"typographer", "posts", entry.id, "polish", { quotes: true, nbsp: true }, { contentLocale: "fr", draft },
 		);
 		const patched = await host.admin.applyEditorDraftPatch("panel", "typographer", draft, proposal, editorState(draft), draft.fields);
-		expect(patched.title).toBe("« Bonjour » !");
+		expect(patched.title).toBe("«\u202FBonjour\u202F»\u202F!");
 	});
 });
 ```
