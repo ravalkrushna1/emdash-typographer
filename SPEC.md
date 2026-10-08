@@ -86,8 +86,10 @@ behaviour.
 | 3 | Clicks **Polish selected** | `form_submit` + fresh draft + toggles | `editor-draft-patch` with `set` ops only for fields that changed |
 | 4 | Previews, applies, saves | — | — |
 
-Step 3 rescans the fresh draft rather than reusing step 2's result, so we always act on
-what's actually in the form.
+Step 2 counts every rule as if all were on, so editors can see what the risky rules
+would catch before enabling them; the panel says so. Step 3 rescans the fresh draft with
+only the selected rules, so the patch reflects exactly what is in the form, and the host
+preview shows the precise changes.
 
 ## Rules
 

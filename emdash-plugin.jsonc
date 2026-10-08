@@ -15,7 +15,35 @@
 	// KV, and route/hook registration. Changing these between
 	// releases requires a version bump because installed
 	// users have consented to the old contract.
-	"capabilities": [],
+	"capabilities": ["admin.editor-draft:read", "admin.editor-draft:patch"],
 	"allowedHosts": [],
-	"storage": {}
+	"storage": {},
+	"admin": {
+		"editorPanels": [
+			{
+				"id": "typographer",
+				"title": "Typographer",
+				"route": "panel",
+				"collections": [
+					"posts", "pages", "projects", "articles", "news", "blog", "stories",
+					"docs", "guides", "tutorials", "events", "products", "case_studies",
+					"portfolio", "services", "recipes", "podcasts", "episodes", "faqs",
+					"testimonials", "team", "jobs", "courses", "lessons", "changelog",
+					"press", "resources", "reviews"
+				],
+				"draft": {
+					"read": { "fields": [
+						"title", "subtitle", "headline", "excerpt", "summary", "description",
+							"intro", "lead", "content", "body", "text", "bio", "abstract",
+							"caption", "quote", "question", "answer", "details", "overview"
+					] },
+					"patch": { "fields": [
+						"title", "subtitle", "headline", "excerpt", "summary", "description",
+							"intro", "lead", "content", "body", "text", "bio", "abstract",
+							"caption", "quote", "question", "answer", "details", "overview"
+					] }
+				}
+			}
+		]
+	}
 }
