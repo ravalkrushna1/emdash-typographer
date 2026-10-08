@@ -87,21 +87,33 @@ function pieceBounds(pieces: readonly Piece[]): Bounds[] {
 	});
 }
 
+/** Punctuation that closes a sentence or quote rather than belonging to the URL. */
+const TRAILING_PUNCTUATION = /[.,;:!?)\]}'"’”»]+$/u;
+
 function protectedRanges(joined: string, pieces: readonly Piece[], bounds: readonly Bounds[]): Bounds[] {
 	const ranges = bounds.filter((_, index) => pieces[index]?.locked);
 	for (const match of joined.matchAll(URL_OR_EMAIL)) {
 		const start = match.index ?? 0;
-		ranges.push({ start, end: start + match[0].length });
+		const text = match[0].replace(TRAILING_PUNCTUATION, "");
+		ranges.push({ start, end: start + text.length });
 	}
 	return ranges;
 }
 
 /** The piece an edit belongs to, or -1 when it crosses a boundary. */
-function owningPiece(edit: Edit, bounds: readonly Bounds[]): number {
+function owningPiece(edit: Edit, pieces: readonly Piece[], bounds: readonly Bounds[]): number {
 	if (edit.start === edit.end) {
-		// An insertion joins the piece holding the character before it.
+		// An insertion joins the piece holding the character before it, unless
+		// that piece is locked and an unlocked one starts right here: then it
+		// prepends to the following piece.
 		if (edit.start === 0) return bounds.length > 0 ? 0 : -1;
-		return bounds.findIndex((b) => b.start < edit.start && edit.start <= b.end);
+		const before = bounds.findIndex((b) => b.start < edit.start && edit.start <= b.end);
+		if (before === -1) return -1;
+		const after = before + 1;
+		if (pieces[before]?.locked && bounds[after]?.start === edit.start && !pieces[after]?.locked) {
+			return after;
+		}
+		return before;
 	}
 	return bounds.findIndex((b) => b.start <= edit.start && edit.end <= b.end);
 }
@@ -128,7 +140,7 @@ function acceptEdits(
 		if (edit.start < lastEnd) continue;
 		const isInsertion = edit.start === edit.end;
 		if (isInsertion && edit.start === lastInsertion) continue;
-		const piece = owningPiece(edit, bounds);
+		const piece = owningPiece(edit, pieces, bounds);
 		if (piece === -1 || pieces[piece]?.locked || touchesProtected(edit, ranges)) continue;
 		accepted.push({ ...edit, piece });
 		lastEnd = edit.end;

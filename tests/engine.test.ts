@@ -49,6 +49,15 @@ describe("polishText", () => {
 		expect(result.text).toBe("see https://example.com/a.b and me@site.org!");
 	});
 
+	it("does not protect trailing punctuation after a URL", () => {
+		expect(polishText('see https://x.com/a... ok', [["dot", replaceAll("...", "…")]], ctx).text).toBe(
+			"see https://x.com/a… ok",
+		);
+		expect(polishText("(https://x.com/b), done", [["paren", replaceAll(")", "]")]], ctx).text).toBe(
+			"(https://x.com/b], done",
+		);
+	});
+
 	it("drops overlapping edits after the first", () => {
 		const overlapping: Rule = () => [
 			{ start: 0, end: 2, text: "X" },
@@ -122,6 +131,17 @@ describe("runRules across pieces", () => {
 		];
 		const result = runRules(pieces, [["ins", insertAt2]], ctx);
 		expect(result.pieces.map((piece) => piece.text)).toEqual(["ab!", "cd"]);
+	});
+
+	it("keeps an insertion at a boundary after a locked piece by prepending to the next", () => {
+		const insertAt1: Rule = () => [{ start: 1, end: 1, text: "!" }];
+		const pieces = [
+			{ text: "x", locked: true },
+			{ text: "?", locked: false },
+		];
+		const result = runRules(pieces, [["ins", insertAt1]], ctx);
+		expect(result.pieces.map((piece) => piece.text)).toEqual(["x", "!?"]);
+		expect(result.counts).toEqual({ ins: 1 });
 	});
 
 	it("does not mutate the input pieces", () => {
