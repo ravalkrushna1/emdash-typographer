@@ -161,4 +161,14 @@ describe("Typographer panel", () => {
 		const patched = await host.admin.applyEditorDraftPatch("panel", "typographer", draft, proposal, editorState(draft), draft.fields);
 		expect(patched.title).toBe("«\u202FBonjour\u202F»\u202F!");
 	});
+
+	it("the host rejects a malformed draft before the plugin sees it", async () => {
+		const { host, entry } = await setup("posts");
+		await expect(
+			host.admin.actEditorPanel("typographer", "posts", entry.id, "scan", {
+				contentLocale: "en",
+				draft: { fields: "nope" } as never,
+			}),
+		).rejects.toThrow(/Invalid editor draft/);
+	});
 });

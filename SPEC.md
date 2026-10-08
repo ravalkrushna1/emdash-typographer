@@ -33,7 +33,7 @@ Verified against `emdash-cms/emdash` source at `00b5cfa` (2026-10-08).
 | Draft access requires an explicit `collections` list (no wildcard), ≤ 64 collections, ≤ 32 field slugs. | We ship a list of common slugs. Sites with unusual collection names don't get the panel — a documented ceiling. |
 | Selected field slugs a collection doesn't have are filtered out (`selectedFields` + `patchFieldDefinitions`). | One field list can serve `posts`, `pages`, `projects` together. **Verify in a runtime test before relying on it.** |
 | Limits: 64 KB per field, 192 KB per snapshot. | Oversized fields are skipped with an explanation. |
-| Bundle ≤ 256 KB decompressed, ≤ 128 KB per file, ≤ 20 files; no Node built-ins. | `zod/mini`, no heavy deps; check `bundle` output every release. |
+| Bundle ≤ 256 KB decompressed, ≤ 128 KB per file, ≤ 20 files; no Node built-ins. | Hand-written input guards, no runtime deps; check `bundle` output every release. |
 | Releases are immutable per version. | Patch = fixes, minor = new rules, major = new capabilities (forces re-consent). |
 
 ## Manifest
@@ -172,9 +172,9 @@ Every field gets the whole correct fix or is left alone, and the editor is told 
 | Field > 64 KB after fixing | "*Body* is too long to polish in one go (64 KB limit). Other fields were polished." | Field omitted |
 | Structure guard fails / rule throws | "Couldn't safely polish *Body*. Nothing was changed in it." | Field omitted; `ctx.log.error` with field + rule |
 | Unsupported locale | "No quote style for *sw* yet — using English quotes" | Fallback `en` |
-| Malformed interaction | "Something went wrong — reopen the panel" | zod-validated; never throws |
+| Malformed interaction | "Something went wrong — reopen the panel" | hand-validated; never throws |
 | Edited while working | Host's stale message | Help text: "Edited while scanning? Scan again." |
-| Invalid settings | Inline error, nothing saved | zod before `ctx.settings.set` |
+| Invalid settings | Inline error, nothing saved | hand-validated before `ctx.settings.set` |
 
 Logs never contain entry content — only field slugs, rule names, error messages.
 

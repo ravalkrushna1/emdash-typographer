@@ -1,26 +1,41 @@
 import type { PluginContext, SandboxedPlugin } from "emdash/plugin";
-import * as z from "zod";
 
 import { resolveLocale } from "./locales.js";
 import { polishFields } from "./portable-text.js";
 import { RULE_DEFAULTS, RULE_IDS, selectRules, type RuleId } from "./rules.js";
 import { errorResponse, panelIntro, polishResult, scanResult } from "./ui.js";
 
-const draftSchema = z.object({
-	fields: z.record(z.string(), z.unknown()),
-	fieldDefinitions: z.array(z.object({ slug: z.string(), label: z.string(), type: z.string() })),
-});
+type FieldDefinition = { slug: string; label: string; type: string };
+type Draft = { fields: Record<string, unknown>; fieldDefinitions: FieldDefinition[] };
+type PanelInput =
+	| { type: "panel_load" }
+	| { type: "block_action"; action_id: string; draft?: Draft }
+	| { type: "form_submit"; action_id: string; values: Record<string, unknown>; draft?: Draft };
 
-const panelInput = z.discriminatedUnion("type", [
-	z.object({ type: z.literal("panel_load") }),
-	z.object({ type: z.literal("block_action"), action_id: z.string(), draft: z.optional(draftSchema) }),
-	z.object({
-		type: z.literal("form_submit"),
-		action_id: z.string(),
-		values: z.record(z.string(), z.unknown()),
-		draft: z.optional(draftSchema),
-	}),
-]);
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+	typeof value === "object" && value !== null && !Array.isArray(value);
+
+const isFieldDefinition = (value: unknown): value is FieldDefinition =>
+	isRecord(value) && typeof value.slug === "string" && typeof value.label === "string" && typeof value.type === "string";
+
+function parseDraft(value: unknown): Draft | undefined {
+	if (!isRecord(value) || !isRecord(value.fields)) return undefined;
+	const defs = value.fieldDefinitions;
+	if (!Array.isArray(defs) || !defs.every(isFieldDefinition)) return undefined;
+	return { fields: value.fields, fieldDefinitions: defs };
+}
+
+/** Returns undefined for anything malformed, including a present-but-invalid draft. */
+function parsePanelInput(value: unknown): PanelInput | undefined {
+	if (!isRecord(value)) return undefined;
+	if (value.type === "panel_load") return { type: "panel_load" };
+	if ((value.type !== "block_action" && value.type !== "form_submit") || typeof value.action_id !== "string") return undefined;
+	const draft = value.draft === undefined ? undefined : parseDraft(value.draft);
+	if (value.draft !== undefined && !draft) return undefined;
+	if (value.type === "block_action") return { type: "block_action", action_id: value.action_id, draft };
+	if (!isRecord(value.values)) return undefined;
+	return { type: "form_submit", action_id: value.action_id, values: value.values, draft };
+}
 
 export async function readSettings(ctx: PluginContext): Promise<{ rules: Set<RuleId>; locale: string | null }> {
 	const stored = new Map((await ctx.settings.list()).map(({ key, value }) => [key, value]));
@@ -39,9 +54,8 @@ const plugin: SandboxedPlugin = {
 			permission: "content:edit_own",
 			handler: async (route, ctx) => {
 				if (route.ui?.surface !== "content-editor-panel") return errorResponse("Open Typographer from the editor.");
-				const parsed = panelInput.safeParse(route.input);
-				if (!parsed.success) return errorResponse("Something went wrong — reopen the panel.");
-				const input = parsed.data;
+				const input = parsePanelInput(route.input);
+				if (!input) return errorResponse("Something went wrong — reopen the panel.");
 				const settings = await readSettings(ctx);
 				const locale = resolveLocale(settings.locale, route.ui.entry.locale ?? null);
 
