@@ -37,7 +37,10 @@ export class RuleError extends Error {
 	}
 }
 
-const URL_OR_EMAIL = /\b(?:https?:\/\/|www\.)[^\s<>"“”«»]+|[\w.+-]{1,64}@[\w-]{1,255}(?:\.[\w-]+)+/giu;
+const URL_PATTERN = String.raw`\b(?:https?:\/\/|www\.)[^\s<>"“”«»]+`;
+const URL_ONLY = new RegExp(URL_PATTERN, "giu");
+const URL_OR_EMAIL = new RegExp(String.raw`${URL_PATTERN}|[\w.+-]{1,64}@[\w-]{1,255}(?:\.[\w-]+)+`, "giu");
+const HAS_URL = /https?:\/\/|www\./i;
 
 interface Bounds {
 	start: number;
@@ -95,7 +98,10 @@ const TRAILING_PUNCTUATION = /[.,;:!?)\]}'"’”»]+$/u;
 
 function protectedRanges(joined: string, pieces: readonly Piece[], bounds: readonly Bounds[]): Bounds[] {
 	const ranges = bounds.filter((_, index) => pieces[index]?.locked);
-	for (const match of joined.matchAll(URL_OR_EMAIL)) {
+	// Every rule rescans this; skip the costly email alternative (and URLs) when they cannot match.
+	const pattern = joined.includes("@") ? URL_OR_EMAIL : HAS_URL.test(joined) ? URL_ONLY : undefined;
+	if (!pattern) return ranges;
+	for (const match of joined.matchAll(pattern)) {
 		const start = match.index ?? 0;
 		const text = match[0].replace(TRAILING_PUNCTUATION, "");
 		ranges.push({ start, end: start + text.length });
