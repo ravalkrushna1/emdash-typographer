@@ -114,8 +114,17 @@ corpus.
 **Never touched by any rule:** inline `code` spans, code blocks, HTML blocks, URLs,
 emails, inline objects, images, embeds, tables, non-text fields.
 
-**Quote direction:** opens after start-of-text, whitespace, an opening bracket or a dash;
-closes otherwise. `'` between letters is an apostrophe. English `’` serves as both closing
+**Quote direction:** decided from both neighbours plus which quote kinds (double,
+single) are currently open in the paragraph; already-curly glyphs count, so a second run
+changes nothing. A quote closes before end-of-text, whitespace or closing punctuation
+(`.,;:!?)]}…`, a closing glyph) when its kind is open or it follows a letter, digit or
+closing punctuation. It opens after start-of-text, whitespace, an opening bracket or an
+opening glyph, or after a dash when a letter or digit follows (`—"word`, but
+`to—" she said` closes). With no space on either side (CJK, after an emoji or inline code)
+it alternates: opens if none of its kind is open, else closes. A straight quote right
+after a digit with none of its kind open (`12" pizza`, `5'10"`) is a measurement and stays
+straight; the primes rule converts those when enabled. `'` between letters, or between a
+digit and a letter (`1990's`), is an apostrophe. English `’` serves as both closing
 single quote and apostrophe, so only word-initial `'` is ambiguous: digits (`'90s`) and an
 elision list in `locales.ts` (`'tis`, `'em`, `'n'`) resolve it to `’`.
 

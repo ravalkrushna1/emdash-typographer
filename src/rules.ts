@@ -53,41 +53,83 @@ export const dashes: Rule = (text) => [
 	})),
 ];
 
-/** A quote opens after these (or at the start of the text). */
-const OPENS_AFTER = /[\s([{—–\-/\u00A0\u202F\uFFFC]/u;
+const OPEN_BRACKET = /[([{\uFFFC]/u;
+const CLOSING_PUNCTUATION = /[.,;:!?)\]}…]/u;
+const DASH = /[—–-]/u;
+const LETTER = /\p{L}/u;
+const DIGIT = /\d/;
+
+type QuoteKind = "double" | "single";
+type QuoteDecision = "open" | "close" | "apostrophe" | "straight";
 
 function startsElision(text: string, from: number): boolean {
 	const word = /^\p{L}+/u.exec(text.slice(from))?.[0]?.toLowerCase();
 	return word !== undefined && ELISIONS.includes(word);
 }
 
+/** it's, l'homme, 1990's, and word-initial '90s / 'tis. */
+function isApostrophe(text: string, i: number, afterOpening: boolean): boolean {
+	const prev = text[i - 1];
+	const next = text[i + 1];
+	if (next === undefined) return false;
+	if (prev !== undefined && LETTER.test(prev) && WORDISH.test(next)) return true;
+	if (prev !== undefined && DIGIT.test(prev) && LETTER.test(next)) return true;
+	return afterOpening && (DIGIT.test(next) || startsElision(text, i + 1));
+}
+
+/**
+ * Looks at both neighbours and at which quote kinds are open in this paragraph.
+ * Already-curly glyphs count towards what is open, so a second run changes nothing.
+ */
 export const quotes: Rule = (text, { locale }) => {
 	const edits: Edit[] = [];
-	const openingGlyphs = new Set([locale.double[0], locale.single[0]]);
-	// Whether the straight quote at an index was turned into an opening glyph.
-	const opened = new Map<number, boolean>();
+	const glyphs = { double: locale.double, single: locale.single };
+	const openers = new Set([locale.double[0], locale.single[0]]);
+	const closers = new Set([locale.double[1], locale.single[1]]);
+	const depth = { double: 0, single: 0 };
+	const decided = new Map<number, QuoteDecision>();
 	for (let i = 0; i < text.length; i++) {
-		const ch = text[i];
-		if (ch !== '"' && ch !== "'") continue;
+		const ch = text[i] ?? "";
+		const kind: QuoteKind | undefined =
+			ch === '"' || ch === locale.double[0] || ch === locale.double[1] ? "double"
+			: ch === "'" || ch === locale.single[0] || ch === locale.single[1] ? "single"
+			: undefined;
+		if (!kind) continue;
 		const prev = text[i - 1];
 		const next = text[i + 1];
-		const prevIsStraightQuote = prev === '"' || prev === "'";
-		const opens = prevIsStraightQuote
-			? opened.get(i - 1) === true
-			: prev === undefined || OPENS_AFTER.test(prev) || openingGlyphs.has(prev);
+		const before = decided.get(i - 1);
+		const afterOpening =
+			prev === undefined || /\s/u.test(prev) || OPEN_BRACKET.test(prev) || openers.has(prev) || before === "open";
 
-		let glyph: string;
-		if (ch === '"') {
-			glyph = opens ? locale.double[0] : locale.double[1];
-		} else if (prev !== undefined && WORDISH.test(prev) && next !== undefined && WORDISH.test(next)) {
-			glyph = APOSTROPHE; // it's, l'homme
-		} else if (opens && next !== undefined && (/\d/.test(next) || startsElision(text, i + 1))) {
-			glyph = APOSTROPHE; // '90s, 'tis
-		} else {
-			glyph = opens ? locale.single[0] : locale.single[1];
+		if (kind === "single" && (ch === "'" || ch === APOSTROPHE) && isApostrophe(text, i, afterOpening)) {
+			if (ch === "'") {
+				decided.set(i, "apostrophe");
+				edits.push({ start: i, end: i + 1, text: APOSTROPHE });
+			}
+			continue;
 		}
-		opened.set(i, glyph === locale.double[0] || glyph === locale.single[0]);
-		edits.push({ start: i, end: i + 1, text: glyph });
+		if (ch !== '"' && ch !== "'") {
+			depth[kind] = ch === glyphs[kind][0] ? depth[kind] + 1 : Math.max(0, depth[kind] - 1);
+			continue;
+		}
+		const isOpen = depth[kind] > 0;
+		// 12" or 12' with nothing open is a measurement; the primes rule owns those.
+		if (prev !== undefined && DIGIT.test(prev) && !isOpen) {
+			decided.set(i, "straight");
+			continue;
+		}
+		const beforeClosing =
+			next === undefined || /\s/u.test(next) || CLOSING_PUNCTUATION.test(next) || closers.has(next);
+		const afterClosing =
+			prev !== undefined &&
+			(WORDISH.test(prev) || CLOSING_PUNCTUATION.test(prev) || closers.has(prev) || before === "close" || before === "apostrophe");
+		let opens: boolean;
+		if (beforeClosing && (isOpen || afterClosing)) opens = false;
+		else if (afterOpening || (prev !== undefined && DASH.test(prev) && next !== undefined && WORDISH.test(next))) opens = true;
+		else opens = !isOpen; // no space on either side (CJK, emoji, after code): alternate
+		depth[kind] = opens ? depth[kind] + 1 : Math.max(0, depth[kind] - 1);
+		decided.set(i, opens ? "open" : "close");
+		edits.push({ start: i, end: i + 1, text: glyphs[kind][opens ? 0 : 1] });
 	}
 	return edits;
 };

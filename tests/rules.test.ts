@@ -74,12 +74,14 @@ describe("quotes", () => {
 		[`"She said 'hi'"`, "“She said ‘hi’”"],
 		['("quoted")', "(“quoted”)"],
 		["students' books", "students’ books"],
+		["the 1990's", "the 1990’s"],
 		['"I am 10"', "“I am 10”"],
 		['"hi" 👍', "“hi” 👍"],
 		['👍 "hi"', "👍 “hi”"],
+		['😀"hi"', "😀“hi”"],
 	])("changes %j → %j", (input, output) => expect(fix(quotes, input)).toBe(output));
 
-	it.each(["“already” ‘curly’", "no quotes here"])("never touches %j", (input) =>
+	it.each(["“already” ‘curly’", "no quotes here", `5'10"`, 'a 12" pizza', "the 12' boat"])("never touches %j", (input) =>
 		expect(fix(quotes, input)).toBe(input),
 	);
 
@@ -89,6 +91,8 @@ describe("quotes", () => {
 		["de", '"Hallo"', "„Hallo“"],
 		["de", "'Hallo'", "‚Hallo‘"],
 		["ja", '"こんにちは"', "「こんにちは」"],
+		["ja", '彼は"はい"と言った', "彼は「はい」と言った"],
+		["zh", '他说"你好"', "他说“你好”"],
 		["da", '"Hej"', "»Hej«"],
 		["ar", '"marhaba"', "“marhaba”"],
 	])("in %s changes %j → %j", (locale, input, output) =>
@@ -209,12 +213,20 @@ describe("all rules together", () => {
 		expect(run(`He is 5'10" and said "hi"`)).toBe("He is 5′10″ and said “hi”");
 	});
 
+	it("closes a quote after a dash", () => {
+		expect(run(`"I was going to--" she said`)).toBe("“I was going to—” she said");
+	});
+
 	it.each([
 		[`"Wait..." -- she said  it's 10 kg (c) 2026`, "en"],
 		[`"Bonjour !" l'homme : 1/2 page`, "fr"],
 		[`She said 'hi' -- then "bye"... 1920x1080`, "en"],
 		[`box 10 x 20 x 30, pages 10-20 and 5'10"`, "en"],
 		[`„Schon“ "da" 3 x 4`, "de"],
+		['彼は"はい"と言った', "ja"],
+		['他说"你好"', "zh"],
+		[`"I was going to--" she said`, "en"],
+		['😀"hi"', "en"],
 	])("is idempotent on %j (%s)", (input, locale) => {
 		const once = run(input, locale);
 		expect(run(once, locale)).toBe(once);
