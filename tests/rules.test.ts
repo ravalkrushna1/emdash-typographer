@@ -2,7 +2,10 @@ import { describe, expect, it } from "vitest";
 
 import { resolveLocale } from "../src/locales.js";
 import { polishText, type Rule } from "../src/portable-text.js";
-import { dashes, ellipsis, nbsp, quotes, spacing, symbols } from "../src/rules.js";
+import {
+	RULE_DEFAULTS, RULE_IDS, dashes, ellipsis, fractions, multiplication, nbsp, primes, quotes, ranges,
+	selectRules, spacing, symbols,
+} from "../src/rules.js";
 
 const fix = (rule: Rule, text: string, locale = "en") =>
 	polishText(text, [["rule", rule]], { locale: resolveLocale(null, locale).style }).text;
@@ -123,4 +126,94 @@ describe("nbsp", () => {
 		"in French never touches %j",
 		(input) => expect(fix(nbsp, input, "fr")).toBe(input),
 	);
+});
+
+describe("ranges", () => {
+	it.each([
+		["pages 10-20", "pages 10–20"],
+		["1990-1995", "1990–1995"],
+		["read 10-20.", "read 10–20."],
+	])("changes %j → %j", (input, output) => expect(fix(ranges, input)).toBe(output));
+
+	it.each(["2026-10-08", "555-123-4567", "B-52", "won 3-2", "1.5-3", "10:00-11:00", "12345-6789"])(
+		"never touches %j",
+		(input) => expect(fix(ranges, input)).toBe(input),
+	);
+});
+
+describe("multiplication", () => {
+	it.each([
+		["1920x1080", "1920×1080"],
+		["3 x 4", "3 × 4"],
+		["2.5x3", "2.5×3"],
+	])("changes %j → %j", (input, output) => expect(fix(multiplication, input)).toBe(output));
+
+	it.each(["0x1F", "0x10", "X200x300", "3x", "3 x4", "box"])("never touches %j", (input) =>
+		expect(fix(multiplication, input)).toBe(input),
+	);
+});
+
+describe("fractions", () => {
+	it.each([
+		["1/2 cup", "½ cup"],
+		["add 3/4", "add ¾"],
+		["2/3 done", "⅔ done"],
+	])("changes %j → %j", (input, output) => expect(fix(fractions, input)).toBe(output));
+
+	it.each(["1/2/2026", "11/2", "1/20", "21/2", "5/8"])("never touches %j", (input) =>
+		expect(fix(fractions, input)).toBe(input),
+	);
+});
+
+describe("primes", () => {
+	it.each([
+		[`5'10"`, "5′10″"],
+		[`5' 11"`, "5′ 11″"],
+		["6' tall", "6′ tall"],
+	])("changes %j → %j", (input, output) => expect(fix(primes, input)).toBe(output));
+
+	it.each([`"I am 10"`, "'I scored 10' she said", "the '90s", "rock'n'roll"])(
+		"never touches %j",
+		(input) => expect(fix(primes, input)).toBe(input),
+	);
+});
+
+describe("rule registry", () => {
+	it("keeps the spec's order", () => {
+		expect(RULE_IDS).toEqual([
+			"spacing", "symbols", "ellipsis", "dashes", "ranges",
+			"multiplication", "fractions", "primes", "quotes", "nbsp",
+		]);
+	});
+
+	it("turns risky rules off by default", () => {
+		expect(RULE_IDS.filter((id) => !RULE_DEFAULTS[id])).toEqual([
+			"ranges", "multiplication", "fractions", "primes",
+		]);
+	});
+
+	it("selects enabled rules in spec order regardless of set order", () => {
+		const ids = selectRules(new Set(["quotes", "spacing"] as const)).map(([id]) => id);
+		expect(ids).toEqual(["spacing", "quotes"]);
+	});
+});
+
+describe("all rules together", () => {
+	const all = selectRules(new Set(RULE_IDS));
+	const run = (text: string, locale = "en") =>
+		polishText(text, all, { locale: resolveLocale(null, locale).style }).text;
+
+	it("lets primes claim measurements before quotes see them", () => {
+		expect(run(`He is 5'10" and said "hi"`)).toBe("He is 5′10″ and said “hi”");
+	});
+
+	it.each([
+		[`"Wait..." -- she said  it's 10 kg (c) 2026`, "en"],
+		[`"Bonjour !" l'homme : 1/2 page`, "fr"],
+		[`She said 'hi' -- then "bye"... 1920x1080`, "en"],
+		[`„Schon“ "da" 3 x 4`, "de"],
+	])("is idempotent on %j (%s)", (input, locale) => {
+		const once = run(input, locale);
+		expect(run(once, locale)).toBe(once);
+	});
 });

@@ -1,5 +1,5 @@
-import { APOSTROPHE, CURRENCIES, ELISIONS, UNITS } from "./locales.js";
-import type { Edit, Rule } from "./portable-text.js";
+import { APOSTROPHE, CURRENCIES, ELISIONS, FRACTIONS, UNITS } from "./locales.js";
+import type { Edit, NamedRule, Rule } from "./portable-text.js";
 
 /** A letter or a digit in any script. */
 const WORDISH = /[\p{L}\p{N}]/u;
@@ -138,3 +138,86 @@ export const nbsp: Rule = (text, { locale }) => {
 		...(locale.frenchSpacing ? frenchSpacing(text) : []),
 	];
 };
+
+export const ranges: Rule = (text) =>
+	matches(
+		text,
+		/(?<![\p{L}\p{N}\-/:]|\d\.)(\d{1,4})-(\d{1,4})(?![\p{L}\p{N}\-/:]|\.\d)/gu,
+		(match, at) => {
+			const from = match[1] ?? "";
+			const to = match[2] ?? "";
+			if (Number(from) >= Number(to)) return null; // scores like 3-2
+			return { start: at + from.length, end: at + from.length + 1, text: "–" };
+		},
+	);
+
+export const multiplication: Rule = (text) =>
+	matches(text, /(?<![\p{L}\p{N}.])(\d+(?:\.\d+)?)( ?)x\2(\d+(?:\.\d+)?)(?![\p{L}\p{N}])/gu, (match, at) => {
+		const left = match[1] ?? "";
+		const space = match[2] ?? "";
+		if (left === "0" && space === "") return null; // hex: 0x10
+		const x = at + left.length + space.length;
+		return { start: x, end: x + 1, text: "×" };
+	});
+
+export const fractions: Rule = (text) =>
+	matches(text, /(?<![\p{N}/])(\d\/\d)(?![\p{N}/])/gu, (match, at) => {
+		const glyph = FRACTIONS[match[1] ?? ""];
+		return glyph ? { start: at, end: at + 3, text: glyph } : null;
+	});
+
+/** An opening single quote earlier in the text means a later ' after a digit is probably its close. */
+const hasOpenSingleQuote = (before: string) => /(?:^|[\s([{])['‘]/.test(before);
+
+export const primes: Rule = (text) => {
+	const edits: Edit[] = [];
+	const claimed = new Set<number>();
+	for (const match of text.matchAll(/(?<![\p{L}\p{N}])(\d+)'(\s?)(\d+(?:\.\d+)?)"/gu)) {
+		const at = match.index ?? 0;
+		const feet = at + (match[1] ?? "").length;
+		const inches = at + match[0].length - 1;
+		edits.push({ start: feet, end: feet + 1, text: "′" }, { start: inches, end: inches + 1, text: "″" });
+		claimed.add(feet);
+	}
+	for (const match of text.matchAll(/(?<![\p{L}\p{N}])(\d+)'(?=[\s,.;:!?)]|$)/gu)) {
+		const at = match.index ?? 0;
+		const feet = at + (match[1] ?? "").length;
+		if (claimed.has(feet) || hasOpenSingleQuote(text.slice(0, at))) continue;
+		edits.push({ start: feet, end: feet + 1, text: "′" });
+	}
+	return edits;
+};
+
+export const RULE_IDS = [
+	"spacing", "symbols", "ellipsis", "dashes", "ranges",
+	"multiplication", "fractions", "primes", "quotes", "nbsp",
+] as const;
+
+export type RuleId = (typeof RULE_IDS)[number];
+
+export const RULES: Record<RuleId, Rule> = {
+	spacing, symbols, ellipsis, dashes, ranges, multiplication, fractions, primes, quotes, nbsp,
+};
+
+export const RULE_LABELS: Record<RuleId, string> = {
+	spacing: "Double spaces",
+	symbols: "Symbols © ® ™",
+	ellipsis: "Ellipsis …",
+	dashes: "Dashes — –",
+	ranges: "Number ranges 10–20",
+	multiplication: "Multiplication ×",
+	fractions: "Fractions ½",
+	primes: "Feet and inches 5′10″",
+	quotes: "Curly quotes",
+	nbsp: "No-break spaces",
+};
+
+export const RISKY_RULES: ReadonlySet<RuleId> = new Set(["ranges", "multiplication", "fractions", "primes"]);
+
+export const RULE_DEFAULTS: Record<RuleId, boolean> = Object.fromEntries(
+	RULE_IDS.map((id) => [id, !RISKY_RULES.has(id)]),
+) as Record<RuleId, boolean>;
+
+export function selectRules(enabled: ReadonlySet<RuleId>): NamedRule[] {
+	return RULE_IDS.filter((id) => enabled.has(id)).map((id) => [id, RULES[id]] as const);
+}
