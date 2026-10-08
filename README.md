@@ -14,11 +14,11 @@ Rules run in this order.
 | 2 | Symbols | on | `(c)` `(r)` `(tm)` → `©` `®` `™` | `(c)` in a field that also has `(a)` or `(b)` |
 | 3 | Ellipsis | on | `...` → `…` | `....` and longer |
 | 4 | Dashes | on | `--` → `—`; ` - ` between words → ` – ` | `--flag` (also `"--flag"`, `(--flag)`), `---`, line-start hyphen |
-| 5 | Ranges | off | `10-20`, `1990-1995` → en dash | `2026-10-08`, `555-123-4567`, `B-52`, first > second (`3-2`) |
+| 5 | Ranges | off | `10-20`, `1990-1995` → en dash | `2026-10-08`, `555-123-4567`, `B-52`, first ≥ second (e.g. `3-2`, `5-5`) |
 | 6 | Multiplication | off | `1920x1080`, `3 x 4` → `×` | `0x1F`, `X200x300` |
 | 7 | Fractions | off | `1/2 1/4 3/4 1/3 2/3` → `½ ¼ ¾ ⅓ ⅔` | `1/2/2026`, `11/2`, `1/20` |
 | 8 | Primes | off | `5'10"` → `5′10″`; `6' tall` → `6′ tall` | a closing quote after a number (`"I am 10"`) |
-| 9 | Quotes | on | `"x"` → `“x”`, `it's` → `it’s`, `'90s` → `’90s`, `'tis` → `’tis` | already-curly quotes |
+| 9 | Quotes | on | `"x"` → `“x”`, `it's` → `it’s`, `'90s` → `’90s`, `'tis` → `’tis` | already-curly quotes; a quote right after a number with no quote open (`12" pizza`, left for Primes) |
 | 10 | Non-breaking spaces | on | `10 kg`, `₹ 500`, `5 €`; French: narrow NBSP before `; ! ?` and inside `« »`, NBSP before `:` | `12:30`, `:)` |
 
 Never touched by any rule: inline `code` spans, code blocks, HTML blocks, URLs, emails, inline objects, images, embeds, tables, non-text fields.
@@ -48,14 +48,14 @@ Exactly two, and nothing else:
 - `admin.editor-draft:read` — read the entry you are editing.
 - `admin.editor-draft:patch` — suggest changes to it (you preview and apply them).
 
-No network access, no content access outside the editor, no hooks, no storage.
+No network access, no content access outside the editor, no hooks, no content storage — it only keeps its own settings.
 
 ## Limits
 
 - The panel appears only on these collections (28): `posts`, `pages`, `projects`, `articles`, `news`, `blog`, `stories`, `docs`, `guides`, `tutorials`, `events`, `products`, `case_studies`, `portfolio`, `services`, `recipes`, `podcasts`, `episodes`, `faqs`, `testimonials`, `team`, `jobs`, `courses`, `lessons`, `changelog`, `press`, `resources`, `reviews`.
 - It reads and fixes only these fields (19): `title`, `subtitle`, `headline`, `excerpt`, `summary`, `description`, `intro`, `lead`, `content`, `body`, `text`, `bio`, `abstract`, `caption`, `quote`, `question`, `answer`, `details`, `overview`.
 - A never-saved (new) entry must be saved once before the panel can scan it.
-- Fields over 64 KB are skipped, with a note in the panel; other fields are still polished.
+- Very long fields can't be scanned at all: if any of these fields is over 64 KB (or all of them together over 192 KB), EmDash doesn't hand the entry to the plugin. If fixing a field would push it over 64 KB, the panel warns and leaves that field alone.
 - Tables and custom blocks are not touched in v1.
 
 The lists are fixed because EmDash plugin manifests cannot use wildcards.

@@ -139,7 +139,7 @@ describe("ranges", () => {
 		["read 10-20.", "read 10–20."],
 	])("changes %j → %j", (input, output) => expect(fix(ranges, input)).toBe(output));
 
-	it.each(["2026-10-08", "555-123-4567", "B-52", "won 3-2", "1.5-3", "10:00-11:00", "12345-6789"])(
+	it.each(["2026-10-08", "555-123-4567", "B-52", "won 3-2", "5-5", "1.5-3", "10:00-11:00", "12345-6789"])(
 		"never touches %j",
 		(input) => expect(fix(ranges, input)).toBe(input),
 	);

@@ -32,7 +32,7 @@ Verified against `emdash-cms/emdash` source at `00b5cfa` (2026-10-08).
 | `panel_load` never carries the draft; explicit `block_action` / `form_submit` interactions do. | Panel needs an explicit **Scan** click. |
 | Draft access requires an explicit `collections` list (no wildcard), ≤ 64 collections, ≤ 32 field slugs. | We ship a list of common slugs. Sites with unusual collection names don't get the panel — a documented ceiling. |
 | Selected field slugs a collection doesn't have are filtered out (`selectedFields` + `patchFieldDefinitions`). | One field list can serve `posts`, `pages`, `projects` together. **Verify in a runtime test before relying on it.** |
-| Limits: 64 KB per field, 192 KB per snapshot. | Oversized fields are skipped with an explanation. |
+| Limits: 64 KB per field, 192 KB per snapshot. | The host rejects the whole draft before the plugin sees it when any selected field is over 64 KB or the snapshot over 192 KB, so such entries cannot be scanned at all. The plugin only explains (and omits) a field its own fixes would push over 64 KB. |
 | Bundle ≤ 256 KB decompressed, ≤ 128 KB per file, ≤ 20 files; no Node built-ins. | Hand-written input guards, no runtime deps; check `bundle` output every release. |
 | Releases are immutable per version. | Patch = fixes, minor = new rules, major = new capabilities (forces re-consent). |
 
@@ -104,11 +104,11 @@ Run in this fixed order (later rules depend on earlier ones claiming characters)
 | 2 | Symbols | on | `(c)` `(r)` `(tm)` → `©` `®` `™` | `(c)` in a field that also has `(a)` or `(b)` |
 | 3 | Ellipsis | on | `...` → `…` | `....` and longer |
 | 4 | Dashes | on | `--` → `—`; ` - ` between words → ` – ` | `--flag` (also `"--flag"`, `(--flag)`), `---`, line-start hyphen |
-| 5 | Ranges | off | `10-20`, `1990-1995` → en dash | `2026-10-08`, `555-123-4567`, `B-52`, first > second (`3-2`) |
+| 5 | Ranges | off | `10-20`, `1990-1995` → en dash | `2026-10-08`, `555-123-4567`, `B-52`, first ≥ second (e.g. `3-2`, `5-5`) |
 | 6 | Multiplication | off | `1920x1080`, `3 x 4` → `×` | `0x1F`, `X200x300` |
 | 7 | Fractions | off | `1/2 1/4 3/4 1/3 2/3` → `½ ¼ ¾ ⅓ ⅔` | `1/2/2026`, `11/2`, `1/20` |
 | 8 | Primes | off | `5'10"` → `5′10″`; `6' tall` → `6′ tall` | a closing quote after a number (`"I am 10"`) |
-| 9 | Quotes | on | `"x"` → `“x”`, `it's` → `it’s`, `'90s` → `’90s`, `'tis` → `’tis` | already-curly quotes |
+| 9 | Quotes | on | `"x"` → `“x”`, `it's` → `it’s`, `'90s` → `’90s`, `'tis` → `’tis` | already-curly quotes; a quote right after a number with no quote open (`12" pizza`, left for Primes) |
 | 10 | Non-breaking spaces | on | `10 kg`, `₹ 500`, `5 €`; French: narrow NBSP (U+202F) before `; ! ?` and inside `« »`, NBSP (U+00A0) before `:` | `12:30`, `:)` |
 
 Risky rules (5–8) ship off by default with strict patterns. Each has its own never-touch
