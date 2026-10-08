@@ -54,7 +54,7 @@ export const dashes: Rule = (text) => [
 ];
 
 /** A quote opens after these (or at the start of the text). */
-const OPENS_AFTER = /[\s([{—–\-/\u00A0\u202F￼]/u;
+const OPENS_AFTER = /[\s([{—–\-/\u00A0\u202F\uFFFC]/u;
 
 function startsElision(text: string, from: number): boolean {
 	const word = /^\p{L}+/u.exec(text.slice(from))?.[0]?.toLowerCase();
