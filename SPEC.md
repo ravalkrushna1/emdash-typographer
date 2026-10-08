@@ -181,7 +181,7 @@ Every field gets the whole correct fix or is left alone, and the editor is told 
 | Case | Editor sees | Behaviour |
 |---|---|---|
 | Nothing to fix | "Looks clean ✓" | No patch |
-| Field > 64 KB after fixing | "*Body* is too long to polish in one go (64 KB limit). Other fields were polished." | Field omitted |
+| Field > 64 KB after fixing | "*Body* is too long to polish in one go (64 KB limit)." Scan adds "Other fields can still be polished."; Polish adds "Other fields were polished." only when another field changed | Field omitted |
 | Structure guard fails / rule throws | "Couldn't safely polish *Body*. Nothing was changed in it." | Field omitted; `ctx.log.error` with field + rule |
 | Unsupported locale | "No quote style for *sw* yet — using English quotes" | Fallback `en` |
 | Malformed interaction | "Something went wrong — reopen the panel" | hand-validated; never throws |

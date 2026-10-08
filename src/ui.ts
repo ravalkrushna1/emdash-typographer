@@ -38,9 +38,13 @@ export function panelIntro(locale: ResolvedLocale): BlockResponse {
 	};
 }
 
-const total = (counts: Counts) => Object.values(counts).reduce((sum, n) => sum + n, 0);
+function fixCount(counts: Counts): string {
+	const n = Object.values(counts).reduce((sum, count) => sum + count, 0);
+	return `${n} ${n === 1 ? "fix" : "fixes"}`;
+}
 
-function problemBanners(results: FieldResult[]): Block[] {
+/** `othersNote` is what to say about the remaining fields when one is too large. */
+function problemBanners(results: FieldResult[], othersNote?: string): Block[] {
 	const blocks: Block[] = [];
 	for (const result of results) {
 		if (result.status === "too-large") {
@@ -48,7 +52,7 @@ function problemBanners(results: FieldResult[]): Block[] {
 				type: "banner",
 				variant: "alert",
 				title: `${result.label} is too long to polish in one go (64 KB limit).`,
-				description: "Other fields were polished.",
+				...(othersNote ? { description: othersNote } : {}),
 			});
 		} else if (result.status === "failed") {
 			blocks.push({
@@ -64,7 +68,7 @@ function problemBanners(results: FieldResult[]): Block[] {
 
 export function scanResult(results: FieldResult[], counts: Counts, enabled: ReadonlySet<RuleId>, locale: ResolvedLocale): BlockResponse {
 	const found = RULE_IDS.filter((id) => (counts[id] ?? 0) > 0);
-	const problems = problemBanners(results);
+	const problems = problemBanners(results, "Other fields can still be polished.");
 	if (found.length === 0) {
 		return {
 			blocks: [
@@ -77,7 +81,7 @@ export function scanResult(results: FieldResult[], counts: Counts, enabled: Read
 	return {
 		blocks: [
 			...problems,
-			{ type: "header", text: `Found ${total(counts)} fixes` },
+			{ type: "header", text: `Found ${fixCount(counts)}` },
 			localeLine(locale),
 			{
 				type: "form",
@@ -97,11 +101,11 @@ export function scanResult(results: FieldResult[], counts: Counts, enabled: Read
 }
 
 export function polishResult(results: FieldResult[], counts: Counts): BlockResponse {
-	const blocks = problemBanners(results);
 	const changed = results.filter((result) => result.status === "changed").map((result) => result.label);
+	const blocks = problemBanners(results, changed.length > 0 ? "Other fields were polished." : undefined);
 	blocks.push(
 		changed.length > 0
-			? { type: "section", text: `Proposed ${total(counts)} fixes in ${changed.join(", ")}. Review the preview to apply them.` }
+			? { type: "section", text: `Proposed ${fixCount(counts)} in ${changed.join(", ")}. Review the preview to apply them.` }
 			: { type: "banner", title: "Nothing to change with the selected rules." },
 		scanButton("Scan again"),
 	);

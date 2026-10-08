@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it } from "vitest";
 
-import { scanResult } from "../src/ui.js";
+import { polishResult, scanResult } from "../src/ui.js";
 import { resolveLocale } from "../src/locales.js";
 import { createPluginRuntimeTestHost } from "@emdash-cms/plugin-test";
 
@@ -123,6 +123,7 @@ describe("Typographer panel", () => {
 		);
 		const patched = await host.admin.applyEditorDraftPatch("panel", "typographer", draft, proposal, editorState(draft), draft.fields);
 		expect(patched.title).toBe("It’s");
+		expect(text(proposal)).toContain("Proposed 1 fix in Title.");
 	});
 
 	it("says the draft is clean and proposes nothing", async () => {
@@ -186,6 +187,36 @@ describe("scanResult", () => {
 		);
 		expect(out).toContain(message);
 		expect(out).not.toContain("Looks clean");
+	});
+
+	it.each([
+		[{ quotes: 1 }, "Found 1 fix"],
+		[{ quotes: 1, dashes: 1 }, "Found 2 fixes"],
+	])("counts %j as %s", (counts, header) => {
+		const results = [{ slug: "title", label: "Title", status: "changed" as const, counts }];
+		expect(JSON.stringify(scanResult(results, counts, new Set(), locale).blocks)).toContain(`"${header}"`);
+	});
+
+	it("says other fields can still be polished when one is too large at scan time", () => {
+		const results = [
+			{ slug: "content", label: "Content", status: "too-large" as const, counts: { quotes: 3 } },
+			{ slug: "title", label: "Title", status: "changed" as const, counts: { quotes: 2 } },
+		];
+		expect(JSON.stringify(scanResult(results, { quotes: 2 }, new Set(), locale).blocks)).toContain("Other fields can still be polished.");
+	});
+});
+
+describe("polishResult", () => {
+	const tooLarge = { slug: "content", label: "Content", status: "too-large" as const, counts: { quotes: 3 } };
+
+	it("says other fields were polished only when one was", () => {
+		const changed = { slug: "title", label: "Title", status: "changed" as const, counts: { quotes: 1 } };
+		const withOther = JSON.stringify(polishResult([tooLarge, changed], { quotes: 1 }).blocks);
+		expect(withOther).toContain("Other fields were polished.");
+		expect(withOther).toContain("Proposed 1 fix in Title.");
+		const alone = JSON.stringify(polishResult([tooLarge], {}).blocks);
+		expect(alone).toContain("too long to polish");
+		expect(alone).not.toContain("Other fields");
 	});
 });
 
