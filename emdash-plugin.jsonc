@@ -19,6 +19,34 @@
 	"allowedHosts": [],
 	"storage": {},
 	"admin": {
+		"pages": [{ "path": "/settings", "label": "Typographer", "icon": "settings" }],
+		"settingsSchema": {
+			"locale": {
+				"type": "select",
+				"label": "Quote style",
+				"default": "auto",
+				"options": [
+					{ "value": "auto", "label": "Automatic (entry language)" },
+					{ "value": "en", "label": "en" }, { "value": "nl", "label": "nl" },
+					{ "value": "hi", "label": "hi" }, { "value": "gu", "label": "gu" },
+					{ "value": "zh", "label": "zh" }, { "value": "fr", "label": "fr" },
+					{ "value": "es", "label": "es" }, { "value": "it", "label": "it" },
+					{ "value": "pt", "label": "pt" }, { "value": "ru", "label": "ru" },
+					{ "value": "de", "label": "de" }, { "value": "pl", "label": "pl" },
+					{ "value": "ja", "label": "ja" }, { "value": "da", "label": "da" }
+				]
+			},
+			"spacing": { "type": "boolean", "label": "Double spaces", "default": true },
+			"symbols": { "type": "boolean", "label": "Symbols", "default": true },
+			"ellipsis": { "type": "boolean", "label": "Ellipsis", "default": true },
+			"dashes": { "type": "boolean", "label": "Dashes", "default": true },
+			"ranges": { "type": "boolean", "label": "Number ranges", "default": false },
+			"multiplication": { "type": "boolean", "label": "Multiplication", "default": false },
+			"fractions": { "type": "boolean", "label": "Fractions", "default": false },
+			"primes": { "type": "boolean", "label": "Feet and inches", "default": false },
+			"quotes": { "type": "boolean", "label": "Curly quotes", "default": true },
+			"nbsp": { "type": "boolean", "label": "No-break spaces", "default": true }
+		},
 		"editorPanels": [
 			{
 				"id": "typographer",

@@ -1,9 +1,9 @@
 import type { PluginContext, SandboxedPlugin } from "emdash/plugin";
 
-import { resolveLocale } from "./locales.js";
+import { SUPPORTED_LOCALES, resolveLocale } from "./locales.js";
 import { polishFields } from "./portable-text.js";
 import { RULE_DEFAULTS, RULE_IDS, selectRules, type RuleId } from "./rules.js";
-import { errorResponse, panelIntro, polishResult, scanResult } from "./ui.js";
+import { errorResponse, panelIntro, polishResult, scanResult, settingsPage } from "./ui.js";
 
 type FieldDefinition = { slug: string; label: string; type: string };
 type Draft = { fields: Record<string, unknown>; fieldDefinitions: FieldDefinition[] };
@@ -48,8 +48,52 @@ export async function readSettings(ctx: PluginContext): Promise<{ rules: Set<Rul
 	return { rules, locale: typeof locale === "string" ? locale : null };
 }
 
+type AdminInput =
+	| { type: "page_load"; page: string }
+	| { type: "form_submit"; action_id: string; values: Record<string, unknown> }
+	| { type: "block_action"; action_id: string };
+
+function parseAdminInput(value: unknown): AdminInput | undefined {
+	if (!isRecord(value)) return undefined;
+	if (value.type === "page_load" && typeof value.page === "string") return { type: "page_load", page: value.page };
+	if (typeof value.action_id !== "string") return undefined;
+	if (value.type === "block_action") return { type: "block_action", action_id: value.action_id };
+	if (value.type === "form_submit" && isRecord(value.values)) {
+		return { type: "form_submit", action_id: value.action_id, values: value.values };
+	}
+	return undefined;
+}
+
+function parseSettingsValues(values: Record<string, unknown>): { locale: string; rules: Record<RuleId, boolean> } | undefined {
+	const { locale } = values;
+	if (typeof locale !== "string" || (locale !== "auto" && !SUPPORTED_LOCALES.includes(locale))) return undefined;
+	const rules = {} as Record<RuleId, boolean>;
+	for (const id of RULE_IDS) {
+		const value = values[id];
+		if (typeof value !== "boolean") return undefined;
+		rules[id] = value;
+	}
+	return { locale, rules };
+}
+
 const plugin: SandboxedPlugin = {
 	routes: {
+		admin: {
+			handler: async (route, ctx) => {
+				const input = parseAdminInput(route.input);
+				if (!input) return { blocks: [] };
+				if (input.type === "form_submit" && input.action_id === "save") {
+					const values = parseSettingsValues(input.values);
+					if (!values) {
+						return { ...settingsPage(await readSettings(ctx)), toast: { type: "error", message: "Settings not saved \u2014 check the values." } };
+					}
+					for (const id of RULE_IDS) await ctx.settings.set(id, values.rules[id]);
+					await ctx.settings.set("locale", values.locale);
+					return { ...settingsPage(await readSettings(ctx)), toast: { type: "success", message: "Settings saved" } };
+				}
+				return settingsPage(await readSettings(ctx));
+			},
+		},
 		panel: {
 			permission: "content:edit_own",
 			handler: async (route, ctx) => {

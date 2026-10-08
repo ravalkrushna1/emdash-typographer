@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 
+import manifestText from "../emdash-plugin.jsonc?raw";
 import { FRACTIONS, SUPPORTED_LOCALES, resolveLocale } from "../src/locales.js";
 
 describe("resolveLocale", () => {
@@ -50,4 +51,8 @@ describe("locale table", () => {
 	it("only lists fractions that have a single glyph", () => {
 		for (const glyph of Object.values(FRACTIONS)) expect([...glyph]).toHaveLength(1);
 	});
+});
+
+it("offers exactly the supported locales in the settings schema", () => {
+	for (const tag of SUPPORTED_LOCALES) expect(manifestText).toContain(`{ "value": "${tag}"`);
 });

@@ -1,6 +1,6 @@
 import type { BlockResponse } from "@emdash-cms/blocks";
 
-import type { ResolvedLocale } from "./locales.js";
+import { SUPPORTED_LOCALES, type ResolvedLocale } from "./locales.js";
 import type { Counts, FieldResult } from "./portable-text.js";
 import { RISKY_RULES, RULE_IDS, RULE_LABELS, type RuleId } from "./rules.js";
 
@@ -106,4 +106,37 @@ export function polishResult(results: FieldResult[], counts: Counts): BlockRespo
 		scanButton("Scan again"),
 	);
 	return { blocks };
+}
+
+export function settingsPage(settings: { rules: ReadonlySet<RuleId>; locale: string | null }): BlockResponse {
+	return {
+		blocks: [
+			{ type: "header", text: "Typographer defaults" },
+			{ type: "context", text: "Which rules start switched on in the editor panel. Editors can still change them per scan." },
+			{
+				type: "form",
+				block_id: "settings",
+				fields: [
+					{
+						type: "select",
+						action_id: "locale",
+						label: "Quote style",
+						options: [
+							{ label: "Automatic (entry language)", value: "auto" },
+							...SUPPORTED_LOCALES.map((tag) => ({ label: tag, value: tag })),
+						],
+						initial_value: settings.locale ?? "auto",
+					},
+					...RULE_IDS.map((id) => ({
+						type: "toggle" as const,
+						action_id: id,
+						label: RULE_LABELS[id],
+						...(RISKY_RULES.has(id) ? { description: "Off by default \u2014 can misfire on dates and codes." } : {}),
+						initial_value: settings.rules.has(id),
+					})),
+				],
+				submit: { label: "Save", action_id: "save" },
+			},
+		],
+	};
 }
