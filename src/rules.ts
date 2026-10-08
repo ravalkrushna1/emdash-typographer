@@ -152,13 +152,17 @@ export const ranges: Rule = (text) =>
 	);
 
 export const multiplication: Rule = (text) =>
-	matches(text, /(?<![\p{L}\p{N}.])(\d+(?:\.\d+)?)( ?)x\2(\d+(?:\.\d+)?)(?![\p{L}\p{N}])/gu, (match, at) => {
-		const left = match[1] ?? "";
-		const space = match[2] ?? "";
-		if (left === "0" && space === "") return null; // hex: 0x10
-		const x = at + left.length + space.length;
-		return { start: x, end: x + 1, text: "×" };
-	});
+	matches(
+		text,
+		/(?<![\p{L}\p{N}.])\d+(?:\.\d+)?(?:( ?)x\1\d+(?:\.\d+)?)+(?![\p{L}\p{N}])/gu,
+		(match, at) => {
+			if (/^0x\d/.test(match[0])) return null; // hex: 0x10
+			return [...match[0].matchAll(/(?<=\d) ?x(?= ?\d)/g)].map((m) => {
+				const start = at + (m.index ?? 0) + m[0].length - 1;
+				return { start, end: start + 1, text: "×" };
+			});
+		},
+	);
 
 export const fractions: Rule = (text) =>
 	matches(text, /(?<![\p{N}/])(\d\/\d)(?![\p{N}/])/gu, (match, at) => {

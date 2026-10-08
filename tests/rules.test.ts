@@ -146,6 +146,8 @@ describe("multiplication", () => {
 		["1920x1080", "1920×1080"],
 		["3 x 4", "3 × 4"],
 		["2.5x3", "2.5×3"],
+		["10 x 20 x 30", "10 × 20 × 30"],
+		["10x20x30", "10×20×30"],
 	])("changes %j → %j", (input, output) => expect(fix(multiplication, input)).toBe(output));
 
 	it.each(["0x1F", "0x10", "X200x300", "3x", "3 x4", "box"])("never touches %j", (input) =>
@@ -211,6 +213,7 @@ describe("all rules together", () => {
 		[`"Wait..." -- she said  it's 10 kg (c) 2026`, "en"],
 		[`"Bonjour !" l'homme : 1/2 page`, "fr"],
 		[`She said 'hi' -- then "bye"... 1920x1080`, "en"],
+		[`box 10 x 20 x 30, pages 10-20 and 5'10"`, "en"],
 		[`„Schon“ "da" 3 x 4`, "de"],
 	])("is idempotent on %j (%s)", (input, locale) => {
 		const once = run(input, locale);
