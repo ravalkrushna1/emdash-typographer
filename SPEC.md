@@ -38,7 +38,9 @@ Verified against `emdash-cms/emdash` source at `00b5cfa` (2026-10-08).
 
 ## Manifest
 
-- Slug `typographer`, license MIT, publisher pinned to the author's Atmosphere DID.
+- Slug `typographer`, license MIT, publisher pinned to the author's Atmosphere DID
+  `did:plc:2vgwjmqe2e6u72wl5uyumrc2` (handle `krushnaraval.bsky.social`; handle may
+  change, the DID never does). Registry name: `@krushnaraval.bsky.social/typographer`.
 - Capabilities: `admin.editor-draft:read`, `admin.editor-draft:patch`. Nothing else —
   no content, network, or hook capabilities. Smallest possible consent prompt.
 - One editor panel, id `typographer`, route `editor/typographer`.
