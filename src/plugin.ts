@@ -1,7 +1,7 @@
 import type { PluginContext, SandboxedPlugin } from "emdash/plugin";
 
 import { resolveLocale } from "./locales.js";
-import { polishFields } from "./portable-text.js";
+import { keepPattern, polishFields } from "./portable-text.js";
 import { RULE_DEFAULTS, RULE_IDS, selectRules, type RuleId } from "./rules.js";
 import { errorResponse, panelIntro, polishResult, scanResult } from "./ui.js";
 
@@ -37,7 +37,9 @@ function parsePanelInput(value: unknown): PanelInput | undefined {
 	return { type: "form_submit", action_id: value.action_id, values: value.values, draft };
 }
 
-export async function readSettings(ctx: PluginContext): Promise<{ rules: Set<RuleId>; locale: string | null }> {
+export async function readSettings(
+	ctx: PluginContext,
+): Promise<{ rules: Set<RuleId>; locale: string | null; keep: string }> {
 	const stored = new Map((await ctx.settings.list()).map(({ key, value }) => [key, value]));
 	const rules = new Set<RuleId>();
 	for (const id of RULE_IDS) {
@@ -45,7 +47,8 @@ export async function readSettings(ctx: PluginContext): Promise<{ rules: Set<Rul
 		if (typeof value === "boolean" ? value : RULE_DEFAULTS[id]) rules.add(id);
 	}
 	const locale = stored.get("locale");
-	return { rules, locale: typeof locale === "string" ? locale : null };
+	const keep = stored.get("keep");
+	return { rules, locale: typeof locale === "string" ? locale : null, keep: typeof keep === "string" ? keep : "" };
 }
 
 const plugin: SandboxedPlugin = {
@@ -63,9 +66,10 @@ const plugin: SandboxedPlugin = {
 				const { draft } = input;
 				if (!draft) return errorResponse("Save the entry once, then scan.");
 
+				const keep = keepPattern(settings.keep);
 				const log = (message: string, data: Record<string, string>) => ctx.log.error(message, data);
 				const run = (rules: ReadonlySet<RuleId>) =>
-					polishFields(draft.fields, draft.fieldDefinitions, selectRules(rules), { locale: locale.style }, log);
+					polishFields(draft.fields, draft.fieldDefinitions, selectRules(rules), { locale: locale.style, keep }, log);
 
 				if (input.type === "block_action" && input.action_id === "scan") {
 					const scanned = run(new Set(RULE_IDS));

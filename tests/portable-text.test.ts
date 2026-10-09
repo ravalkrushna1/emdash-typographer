@@ -3,7 +3,9 @@ import { describe, expect, it, vi } from "vitest";
 import { resolveLocale } from "../src/locales.js";
 import {
 	MAX_FIELD_BYTES,
+	keepPattern,
 	polishFields,
+	polishText,
 	polishPortableText,
 	sameStructure,
 	type Rule,
@@ -165,5 +167,64 @@ describe("polishFields", () => {
 		const run = (content: unknown) => polishFields({ content }, definitions, all, ctx, vi.fn()).results[0];
 		expect(run(legal)?.status).toBe("clean");
 		expect(texts(run(copyright)?.value)).toEqual([["© 2026 Acme"]]);
+	});
+});
+
+describe("code-like fields", () => {
+	it.each(["embed_code", "custom_css", "json_ld", "content_html", "canonical_url", "sku", "hero_svg", "contact_email"])(
+		"skips %s, whose name says it holds code or an identifier",
+		(slug) => {
+			const { results } = polishFields({ [slug]: '"x" -- y' }, [{ slug, label: slug, type: "text" }], all, ctx, vi.fn());
+			expect(results[0]).toMatchObject({ slug, status: "skipped" });
+			expect(results[0]?.value).toBeUndefined();
+		},
+	);
+
+	it.each(["description", "transcript", "post_body", "barcode_notes"])("still polishes %s", (slug) => {
+		const { results } = polishFields({ [slug]: '"x"' }, [{ slug, label: slug, type: "text" }], all, ctx, vi.fn());
+		expect(results[0]?.status).toBe("changed");
+	});
+});
+
+describe("never-touch words", () => {
+	const keep = (list: string) => ({ ...ctx, keep: keepPattern(list) });
+
+	it("leaves a listed phrase alone and still fixes the rest", () => {
+		expect(polishText(`I love Rock 'n' Roll -- "really"`, all, keep("Rock 'n' Roll")).text).toBe(
+			"I love Rock 'n' Roll — “really”",
+		);
+	});
+
+	it("ignores case and surrounding blank lines and spaces", () => {
+		expect(polishText("rock 'n' roll", all, keep("\n  Rock 'n' Roll  \n\n")).text).toBe("rock 'n' roll");
+	});
+
+	it("protects a phrase that runs across formatting", () => {
+		const value = [block("b1", [span("s1", "the "), span("s2", "Yahoo", ["strong"]), span("s3", "!... site")])];
+		const result = polishPortableText(value, all, keep("Yahoo!..."));
+		expect(result.counts).toEqual({});
+	});
+
+	it("treats regex characters literally", () => {
+		expect(polishText("a (c) b -- (c.)", all, keep("(c.)")).text).toBe("a © b — (c.)");
+	});
+
+	it("returns nothing for an empty list", () => {
+		expect(keepPattern("")).toBeUndefined();
+		expect(keepPattern(" \n \n")).toBeUndefined();
+	});
+
+	it("uses at most 100 entries of at most 100 characters", () => {
+		const many = Array.from({ length: 150 }, (_, i) => `<${i}>`).join("\n");
+		const pattern = keepPattern(`${many}\n${"x".repeat(101)}`);
+		expect(pattern && "<99>".match(pattern)).not.toBeNull();
+		expect(pattern && "<100>".match(pattern)).toBeNull();
+		expect(keepPattern("x".repeat(101))).toBeUndefined();
+	});
+
+	it("is idempotent", () => {
+		const once = polishText(`"Rock 'n' Roll" isn't dead`, all, keep("Rock 'n' Roll")).text;
+		expect(once).toBe("“Rock 'n' Roll” isn’t dead");
+		expect(polishText(once, all, keep("Rock 'n' Roll")).text).toBe(once);
 	});
 });

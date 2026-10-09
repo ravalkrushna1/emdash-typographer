@@ -12,6 +12,8 @@ export interface RuleContext {
 	locale: LocaleStyle;
 	/** Whether the whole field uses (a)/(b) list markers; rules check their own text when unset. */
 	listMarkers?: boolean;
+	/** Phrases the admin listed under "Leave these words alone"; see keepPattern. */
+	keep?: RegExp;
 }
 
 export type Rule = (text: string, ctx: RuleContext) => Edit[];
@@ -42,6 +44,22 @@ const URL_ONLY = new RegExp(URL_PATTERN, "giu");
 const URL_OR_EMAIL = new RegExp(String.raw`${URL_PATTERN}|[\w.+-]{1,64}@[\w-]{1,255}(?:\.[\w-]+)+`, "giu");
 const HAS_URL = /https?:\/\/|www\./i;
 
+const MAX_KEEP_ENTRIES = 100;
+const MAX_KEEP_LENGTH = 100;
+
+/** One phrase per line, matched case-insensitively. Capped so a huge list can't slow every rule down. */
+export function keepPattern(list: string): RegExp | undefined {
+	const entries = list
+		.split("\n")
+		.map((line) => line.trim())
+		.filter((line) => line.length > 0 && line.length <= MAX_KEEP_LENGTH)
+		.slice(0, MAX_KEEP_ENTRIES)
+		// Longest first, so "Rock 'n' Roll" wins over "Rock".
+		.sort((a, b) => b.length - a.length)
+		.map((line) => line.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"));
+	return entries.length > 0 ? new RegExp(entries.join("|"), "giu") : undefined;
+}
+
 interface Bounds {
 	start: number;
 	end: number;
@@ -67,7 +85,7 @@ export function runRules(
 		} catch (error) {
 			throw new RuleError(id, error);
 		}
-		const accepted = acceptEdits(proposed, current, bounds, protectedRanges(joined, current, bounds));
+		const accepted = acceptEdits(proposed, current, bounds, protectedRanges(joined, current, bounds, ctx.keep));
 		if (accepted.length === 0) continue;
 		current = applyEdits(current, bounds, accepted);
 		counts[id] = (counts[id] ?? 0) + accepted.length;
@@ -96,8 +114,9 @@ function pieceBounds(pieces: readonly Piece[]): Bounds[] {
 /** Punctuation that closes a sentence or quote rather than belonging to the URL. */
 const TRAILING_PUNCTUATION = /[.,;:!?)\]}'"’”»]+$/u;
 
-function protectedRanges(joined: string, pieces: readonly Piece[], bounds: readonly Bounds[]): Bounds[] {
+function protectedRanges(joined: string, pieces: readonly Piece[], bounds: readonly Bounds[], keep?: RegExp): Bounds[] {
 	const ranges = bounds.filter((_, index) => pieces[index]?.locked);
+	if (keep) for (const match of joined.matchAll(keep)) ranges.push({ start: match.index, end: match.index + match[0].length });
 	// Every rule rescans this; skip the costly email alternative (and URLs) when they cannot match.
 	const pattern = joined.includes("@") ? URL_OR_EMAIL : HAS_URL.test(joined) ? URL_ONLY : undefined;
 	if (!pattern) return ranges;
@@ -266,6 +285,15 @@ function fieldText(value: unknown): string {
 		.join("\n");
 }
 
+/** Slug words that mean the field holds code, markup or an identifier, not prose. */
+const CODE_FIELD_WORDS = new Set([
+	"code", "html", "css", "js", "javascript", "script", "json", "schema", "embed", "iframe", "svg", "xml",
+	"markup", "snippet", "url", "uri", "href", "link", "canonical", "email", "phone", "slug", "sku", "id",
+	"uuid", "key", "token", "hash", "regex", "path", "filename", "color", "colour",
+]);
+
+const isCodeField = (slug: string) => slug.split("_").some((word) => CODE_FIELD_WORDS.has(word));
+
 const byteLength = (value: unknown) => new TextEncoder().encode(JSON.stringify(value)).length;
 
 function polishField(
@@ -275,6 +303,7 @@ function polishField(
 	ctx: RuleContext,
 ): FieldResult {
 	const base = { slug: definition.slug, label: definition.label };
+	if (isCodeField(definition.slug)) return { ...base, status: "skipped", counts: {} };
 	let polished: { value: unknown; counts: Counts };
 	if ((definition.type === "string" || definition.type === "text") && typeof value === "string") {
 		const result = polishText(value, rules, ctx);

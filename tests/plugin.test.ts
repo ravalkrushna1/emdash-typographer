@@ -233,4 +233,42 @@ describe("Typographer settings", () => {
 		expect(text(scan)).toMatch(/"action_id":"ranges"[^}]*"initial_value":true/);
 		expect(text(scan)).toContain("\u201e");
 	});
+
+	it("leaves the words listed under 'Leave these words alone'", async () => {
+		const { host, entry } = await setup("posts");
+		expect((await host.actions.plugin.updateSettings({ keep: "Rock 'n' Roll" })).success).toBe(true);
+		const draft = await host.admin.captureEditorDraft("posts", entry.id, { title: `"Rock 'n' Roll" isn't dead` }, { contentLocale: "en" });
+		const proposal = await host.admin.submitEditorPanel(
+			"typographer", "posts", entry.id, "polish", { quotes: true }, { contentLocale: "en", draft },
+		);
+		const patched = await host.admin.applyEditorDraftPatch("panel", "typographer", draft, proposal, editorState(draft), draft.fields);
+		expect(patched.title).toBe("“Rock 'n' Roll” isn’t dead");
+	});
+});
+
+describe("Typographer coverage", () => {
+	it("polishes custom field names on a singular collection, but not code fields", async () => {
+		host = await createPluginRuntimeTestHost({ i18n: { defaultLocale: "en", locales: ["en"] } });
+		await host.fixtures.collection({
+			slug: "article",
+			label: "Articles",
+			fields: [
+				{ slug: "title", label: "Title", type: "string" },
+				{ slug: "post_body", label: "Body", type: "portableText" },
+				{ slug: "embed_code", label: "Embed", type: "text" },
+			],
+		});
+		const entry = await host.fixtures.content("article", { data: { title: "Saved" }, locale: "en" });
+		const embed = '<div class="x">--</div>';
+		const draft = await host.admin.captureEditorDraft(
+			"article", entry.id, { title: "It's", post_body: paragraph("Wait..."), embed_code: embed }, { contentLocale: "en" },
+		);
+		const proposal = await host.admin.submitEditorPanel(
+			"typographer", "article", entry.id, "polish", { quotes: true, ellipsis: true, dashes: true }, { contentLocale: "en", draft },
+		);
+		const patched = await host.admin.applyEditorDraftPatch("panel", "typographer", draft, proposal, editorState(draft), draft.fields);
+		expect(patched.title).toBe("It’s");
+		expect(JSON.stringify(patched.post_body)).toContain("Wait…");
+		expect(patched.embed_code).toBe(embed);
+	});
 });

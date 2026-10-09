@@ -66,7 +66,14 @@
 			"fractions": { "type": "boolean", "label": "Fractions", "default": false },
 			"primes": { "type": "boolean", "label": "Feet and inches", "default": false },
 			"quotes": { "type": "boolean", "label": "Curly quotes", "default": true },
-			"nbsp": { "type": "boolean", "label": "No-break spaces", "default": true }
+			"nbsp": { "type": "boolean", "label": "No-break spaces", "default": true },
+			"keep": {
+				"type": "string",
+				"multiline": true,
+				"label": "Leave these words alone",
+				"description": "One per line, e.g. Rock 'n' Roll. Upper and lower case count as the same. Up to 100 entries.",
+				"default": ""
+			}
 		},
 		"editorPanels": [
 			{
@@ -74,19 +81,22 @@
 				"title": "Typographer",
 				"route": "panel",
 				"collections": [
-					"posts", "pages", "projects", "articles", "news", "blog", "stories",
-					"docs", "guides", "tutorials", "events", "products", "case_studies",
-					"portfolio", "services", "recipes", "podcasts", "episodes", "faqs",
-					"testimonials", "team", "jobs", "courses", "lessons", "changelog",
-					"press", "resources", "reviews"
+					"posts", "pages", "projects", "articles", "news", "blog", "stories", "docs",
+					"guides", "tutorials", "events", "products", "case_studies", "portfolio", "services", "recipes",
+					"podcasts", "episodes", "faqs", "testimonials", "team", "jobs", "courses", "lessons",
+					"changelog", "press", "resources", "reviews", "post", "page", "project", "article",
+					"story", "doc", "guide", "tutorial", "event", "product", "case_study", "service",
+					"recipe", "podcast", "episode", "faq", "testimonial", "job", "course", "lesson",
+					"review", "resource", "notes", "updates", "announcements", "documentation", "knowledge_base", "help",
+					"authors", "people", "locations", "books", "talks", "videos", "newsletters", "landing_pages"
 				],
 				"draft": {
-					"read": { "fields": [
+					"read": { "translatable": true, "fields": [
 						"title", "subtitle", "headline", "excerpt", "summary", "description",
 							"intro", "lead", "content", "body", "text", "bio", "abstract",
 							"caption", "quote", "question", "answer", "details", "overview"
 					] },
-					"patch": { "fields": [
+					"patch": { "translatable": true, "fields": [
 						"title", "subtitle", "headline", "excerpt", "summary", "description",
 							"intro", "lead", "content", "body", "text", "bio", "abstract",
 							"caption", "quote", "question", "answer", "details", "overview"

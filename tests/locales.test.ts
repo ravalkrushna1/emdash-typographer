@@ -94,6 +94,6 @@ it("offers exactly the supported locales in the settings schema", () => {
 it("declares one setting per rule plus locale, with the rule defaults", () => {
 	const manifest = JSON.parse(manifestText.replace(/^\s*\/\/.*$/gm, ""));
 	const schema: Record<string, { default: unknown }> = manifest.admin.settingsSchema;
-	expect(Object.keys(schema).sort()).toEqual([...RULE_IDS, "locale"].sort());
+	expect(Object.keys(schema).sort()).toEqual([...RULE_IDS, "keep", "locale"].sort());
 	for (const id of RULE_IDS) expect(schema[id]?.default).toBe(RULE_DEFAULTS[id]);
 });
