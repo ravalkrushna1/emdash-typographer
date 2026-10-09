@@ -39,14 +39,47 @@ describe("resolveLocale", () => {
 		expect(resolved.requested).toBe("ar");
 		expect(resolved.fellBack).toBe(true);
 	});
+
+	it.each(["constructor", "__proto__", "toString"])("treats the object key %j as an unknown language", (tag) => {
+		const resolved = resolveLocale(null, tag);
+		expect(resolved.style.tag).toBe("en");
+		expect(resolved.fellBack).toBe(true);
+	});
 });
 
 describe("locale table", () => {
 	it.each(SUPPORTED_LOCALES)("%s has complete, single-character quote pairs", (tag) => {
 		const { style } = resolveLocale(tag, null);
+		expect(style.tag).toBe(tag);
 		for (const glyph of [...style.double, ...style.single]) {
 			expect([...glyph]).toHaveLength(1);
 		}
+	});
+
+	it.each([
+		["sv", "”", "”", "’", "’"],
+		["fi", "”", "”", "’", "’"],
+		["nb", "«", "»", "‘", "’"],
+		["no", "«", "»", "‘", "’"],
+		["nn", "«", "»", "‘", "’"],
+		["cs", "„", "“", "‚", "‘"],
+		["sk", "„", "“", "‚", "‘"],
+		["hu", "„", "”", "»", "«"],
+		["tr", "“", "”", "‘", "’"],
+		["ko", "“", "”", "‘", "’"],
+		["uk", "«", "»", "„", "“"],
+		["el", "«", "»", "“", "”"],
+		["ro", "„", "”", "«", "»"],
+		["bg", "„", "“", "„", "“"],
+		["mr", "“", "”", "‘", "’"],
+		["ta", "“", "”", "‘", "’"],
+		["bn", "“", "”", "‘", "’"],
+	])("%s uses %s…%s and %s…%s", (tag, d0, d1, s0, s1) => {
+		const { style } = resolveLocale(null, tag);
+		expect(style.double).toEqual([d0, d1]);
+		expect(style.single).toEqual([s0, s1]);
+		expect(style.frenchSpacing).toBe(false);
+		expect(resolveLocale(null, tag).fellBack).toBe(false);
 	});
 
 	it("only lists fractions that have a single glyph", () => {

@@ -80,7 +80,8 @@ function isApostrophe(text: string, i: number, afterOpening: boolean): boolean {
 	if (next === undefined) return false;
 	if (prev !== undefined && LETTER.test(prev) && WORDISH.test(next)) return true;
 	if (prev !== undefined && DIGIT.test(prev) && LETTER.test(next)) return true;
-	return afterOpening && (DIGIT.test(next) || startsElision(text, i + 1));
+	// '90s is an apostrophe, but '1984' is a quoted number.
+	return afterOpening && ((DIGIT.test(next) && !/^\d+['’]/.test(text.slice(i + 1))) || startsElision(text, i + 1));
 }
 
 /**
@@ -115,7 +116,10 @@ export const quotes: Rule = (text, { locale }) => {
 			continue;
 		}
 		if (ch !== '"' && ch !== "'") {
-			depth[kind] = ch === glyphs[kind][0] ? depth[kind] + 1 : Math.max(0, depth[kind] - 1);
+			const [opener, closer] = glyphs[kind];
+			// Swedish ” ” opens and closes with the same glyph: toggle.
+			const opensHere = opener === closer ? depth[kind] === 0 : ch === opener;
+			depth[kind] = opensHere ? depth[kind] + 1 : Math.max(0, depth[kind] - 1);
 			continue;
 		}
 		const isOpen = depth[kind] > 0;
@@ -214,7 +218,7 @@ export const multiplication: Rule = (text) =>
 	);
 
 export const fractions: Rule = (text) =>
-	matches(text, /(?<![\p{N}/])(\d\/\d)(?![\p{N}/])/gu, (match, at) => {
+	matches(text, /(?<![\p{L}\p{N}/])(\d\/\d)(?![\p{N}/])/gu, (match, at) => {
 		const glyph = FRACTIONS[match[1] ?? ""];
 		return glyph ? { start: at, end: at + 3, text: glyph } : null;
 	});

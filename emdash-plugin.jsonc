@@ -45,7 +45,16 @@
 					{ "value": "es", "label": "es" }, { "value": "it", "label": "it" },
 					{ "value": "pt", "label": "pt" }, { "value": "ru", "label": "ru" },
 					{ "value": "de", "label": "de" }, { "value": "pl", "label": "pl" },
-					{ "value": "ja", "label": "ja" }, { "value": "da", "label": "da" }
+					{ "value": "ja", "label": "ja" }, { "value": "da", "label": "da" },
+					{ "value": "sv", "label": "sv" }, { "value": "fi", "label": "fi" },
+					{ "value": "nb", "label": "nb" }, { "value": "no", "label": "no" },
+					{ "value": "nn", "label": "nn" }, { "value": "cs", "label": "cs" },
+					{ "value": "sk", "label": "sk" }, { "value": "hu", "label": "hu" },
+					{ "value": "tr", "label": "tr" }, { "value": "ko", "label": "ko" },
+					{ "value": "uk", "label": "uk" }, { "value": "el", "label": "el" },
+					{ "value": "ro", "label": "ro" }, { "value": "bg", "label": "bg" },
+					{ "value": "mr", "label": "mr" }, { "value": "ta", "label": "ta" },
+					{ "value": "bn", "label": "bn" }
 				]
 			},
 			"spacing": { "type": "boolean", "label": "Double spaces", "default": true },

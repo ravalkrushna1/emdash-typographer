@@ -86,6 +86,8 @@ describe("quotes", () => {
 		[`"That car is the Joneses'"`, "“That car is the Joneses’”"],
 		["the students'—and teachers'—books", "the students’—and teachers’—books"],
 		["the dogs'-only park", "the dogs’-only park"],
+		["'1984' is a novel", "‘1984’ is a novel"],
+		["She rated it '10' out of 10", "She rated it ‘10’ out of 10"],
 	])("changes %j → %j", (input, output) => expect(fix(quotes, input)).toBe(output));
 
 	it.each(["“already” ‘curly’", "no quotes here", `5'10"`, 'a 12" pizza', "the 12' boat"])("never touches %j", (input) =>
@@ -102,6 +104,15 @@ describe("quotes", () => {
 		["zh", '他说"你好"', "他说“你好”"],
 		["da", '"Hej"', "»Hej«"],
 		["ar", '"marhaba"', "“marhaba”"],
+		["sv", '”Hej” sa hon om en 12" pizza', '”Hej” sa hon om en 12" pizza'],
+		["sv", '"Hej" sa hon, "då"', "”Hej” sa hon, ”då”"],
+		["sv", '”Hej” sa hon, "då"', "”Hej” sa hon, ”då”"],
+		["sv", "Det är 'bra'", "Det är ’bra’"],
+		["fi", '"Hei"', "”Hei”"],
+		["cs", '"Ahoj"', "„Ahoj“"],
+		["hu", `"Azt mondta: 'igen'"`, "„Azt mondta: »igen«”"],
+		["uk", '"Привіт"', "«Привіт»"],
+		["bg", '"Здравей"', "„Здравей“"],
 	])("in %s changes %j → %j", (locale, input, output) =>
 		expect(fix(quotes, input, locale)).toBe(output),
 	);
@@ -173,7 +184,7 @@ describe("fractions", () => {
 		["2/3 done", "⅔ done"],
 	])("changes %j → %j", (input, output) => expect(fix(fractions, input)).toBe(output));
 
-	it.each(["1/2/2026", "11/2", "1/20", "21/2", "5/8"])("never touches %j", (input) =>
+	it.each(["1/2/2026", "11/2", "1/20", "21/2", "5/8", "part A1/2", "rev1/2"])("never touches %j", (input) =>
 		expect(fix(fractions, input)).toBe(input),
 	);
 });
@@ -241,6 +252,9 @@ describe("all rules together", () => {
 		['😀"hi"', "en"],
 		[`"Yes"--she paused--"no."`, "en"],
 		["the students'--and teachers'--books", "en"],
+		[`"Hej" sa hon, "då" -- 'bra'`, "sv"],
+		[`"Azt mondta: 'igen'"`, "hu"],
+		["'1984' is a novel, unlike the '90s", "en"],
 	])("is idempotent on %j (%s)", (input, locale) => {
 		const once = run(input, locale);
 		expect(run(once, locale)).toBe(once);

@@ -26,6 +26,9 @@ type Style = Omit<LocaleStyle, "tag">;
 
 const ENGLISH: Style = { double: ["“", "”"], single: ["‘", "’"], frenchSpacing: false };
 const GUILLEMETS_INNER_CURLY: Style = { double: ["«", "»"], single: ["“", "”"], frenchSpacing: false };
+const SWEDISH: Style = { double: ["”", "”"], single: ["’", "’"], frenchSpacing: false };
+const NORWEGIAN: Style = { double: ["«", "»"], single: ["‘", "’"], frenchSpacing: false };
+const CZECH: Style = { double: ["„", "“"], single: ["‚", "‘"], frenchSpacing: false };
 
 const STYLES: Readonly<Record<string, Style>> = {
 	en: ENGLISH,
@@ -42,6 +45,24 @@ const STYLES: Readonly<Record<string, Style>> = {
 	pl: { double: ["„", "”"], single: ["«", "»"], frenchSpacing: false },
 	ja: { double: ["「", "」"], single: ["『", "』"], frenchSpacing: false },
 	da: { double: ["»", "«"], single: ["›", "‹"], frenchSpacing: false },
+	// 1.1 additions; pairs from CLDR delimiters (quotationStart/End, alternateQuotationStart/End).
+	sv: SWEDISH,
+	fi: SWEDISH,
+	nb: NORWEGIAN,
+	no: NORWEGIAN,
+	nn: NORWEGIAN,
+	cs: CZECH,
+	sk: CZECH,
+	hu: { double: ["„", "”"], single: ["»", "«"], frenchSpacing: false },
+	tr: ENGLISH,
+	ko: ENGLISH,
+	uk: { double: ["«", "»"], single: ["„", "“"], frenchSpacing: false },
+	el: GUILLEMETS_INNER_CURLY,
+	ro: { double: ["„", "”"], single: ["«", "»"], frenchSpacing: false },
+	bg: { double: ["„", "“"], single: ["„", "“"], frenchSpacing: false },
+	mr: ENGLISH,
+	ta: ENGLISH,
+	bn: ENGLISH,
 };
 
 export const SUPPORTED_LOCALES: readonly string[] = Object.keys(STYLES);
@@ -76,7 +97,7 @@ export const FRACTIONS: Readonly<Record<string, string>> = {
 export function resolveLocale(override: string | null, entryLocale: string | null): ResolvedLocale {
 	const requested = override && override !== "auto" ? override : entryLocale;
 	const tag = requested ? (requested.toLowerCase().split(/[-_]/)[0] ?? "") : "en";
-	const known: Style | undefined = STYLES[tag];
+	const known: Style | undefined = Object.hasOwn(STYLES, tag) ? STYLES[tag] : undefined;
 	return {
 		style: { tag: known ? tag : "en", ...(known ?? ENGLISH) },
 		requested: requested ?? null,

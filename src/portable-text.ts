@@ -300,7 +300,7 @@ export function polishFields(
 	const results: FieldResult[] = [];
 	const counts: Counts = {};
 	for (const definition of definitions) {
-		if (!(definition.slug in fields)) continue;
+		if (!Object.hasOwn(fields, definition.slug)) continue;
 		try {
 			const value = fields[definition.slug];
 			const result = polishField(definition, value, rules, { ...ctx, listMarkers: hasListMarkers(fieldText(value)) });
