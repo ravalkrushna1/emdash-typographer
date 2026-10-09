@@ -2,6 +2,7 @@
 	"$schema": "./node_modules/@emdash-cms/plugin-cli/schemas/emdash-plugin.schema.json",
 
 	"slug": "typographer",
+	"name": "Typographer",
 	"publisher": "did:plc:2vgwjmqe2e6u72wl5uyumrc2",
 
 	"license": "MIT",
@@ -9,6 +10,18 @@
 	"security": { "url": "https://github.com/ravalkrushna1/emdash-typographer/security/advisories/new" },
 	"description": "Polishes quotes, dashes, ellipses and spacing in the editor — preview before apply.",
 	"repo": "https://github.com/ravalkrushna1/emdash-typographer",
+	"keywords": ["typography", "smart quotes", "editor", "writing", "i18n"],
+
+	"release": {
+		"artifacts": {
+			"icon": { "file": "./images/icon.png" },
+			"screenshots": [
+				{ "file": "./images/editor-panel.jpg" },
+				{ "file": "./images/preview.jpg" },
+				{ "file": "./images/settings.jpg" }
+			]
+		}
+	},
 
 	// Trust contract — what runtime APIs the plugin asks for.
 	// Empty arrays mean no extra privileges beyond logging,

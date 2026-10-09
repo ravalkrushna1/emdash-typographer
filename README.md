@@ -2,7 +2,9 @@
 
 Finds typographic mistakes in the entry you are editing — straight quotes, `--`, `...`, breaking spaces in `10 kg` — and proposes fixes you preview before applying. Nothing changes without that preview.
 
-<!-- screenshot: images/editor-panel.png (added after manual QA) -->
+![The Typographer panel after a scan: rule toggles with counts](images/editor-panel.jpg)
+
+![EmDash's preview of the proposed changes, before and after](images/preview.jpg)
 
 ## What it fixes
 
@@ -33,6 +35,8 @@ Never touched by any rule: inline `code` spans, code blocks, HTML blocks, URLs, 
 6. **Apply**, then **Save**.
 
 If you edit the entry while working, the host rejects the result: scan again.
+
+In EmDash 1.2, the rich-text editor may keep showing the old text after **Apply** even though the change was applied. Save and reload the page to see it; titles and plain-text fields update straight away.
 
 ## Settings
 

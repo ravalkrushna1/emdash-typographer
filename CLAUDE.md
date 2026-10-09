@@ -21,4 +21,12 @@ Rules (`src/rules.ts`) return edits against one joined paragraph string; the eng
 - The email regex is length-bounded on purpose; an unbounded one was quadratic on 64 KB text.
 - Never log entry content — only field slugs, rule names, error messages.
 - Routes without `permission` default to admin-only `plugins:manage`; the panel route uses `content:edit_own`.
-- Manual QA playground: `~/Projects/typographer-playground` (to be created).
+- Manual QA playground: `~/Projects/typographer-playground` (EmDash blog site on Node, plugin installed via `file:../emdash-typographer`, `sandboxRunner: "@emdash-cms/sandbox-workerd/sandbox"`). Rebuild the plugin (`pnpm run build`) before restarting it; `npx astro dev stop|status|logs` there.
+- EmDash 1.2's rich-text editor doesn't redraw after an applied draft patch until the page is reloaded (data is correct). Not our bug.
+- macOS screenshot filenames contain U+202F before "AM/PM" — use globs, not typed paths.
+
+## Release
+
+- Bump `version` in `package.json`, then `pnpm run validate && pnpm test && pnpm run bundle`.
+- `pnpm run login -- krushnaraval.bsky.social` (once), then `pnpm run publish`; watch approval with the `emdash-plugin info … --watch` command it prints. Versions are immutable.
+- Listing images live in `images/` (declared under `release.artifacts`); the icon source is `images/icon.svg`.
