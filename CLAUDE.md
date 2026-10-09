@@ -14,7 +14,7 @@ Rules (`src/rules.ts`) return edits against one joined paragraph string; the eng
 
 ## Traps
 
-- Manifest `collections` cannot be wildcards (max 64). Draft access uses named `fields` plus `"translatable": true`, which EmDash (admin and server) resolves to every supported translatable field, capped at 32. Widening either is a trust-contract change (version bump, admins re-consent).
+- Manifest `collections` cannot be wildcards (max 64). Draft access is `"translatable": true` only. Never add a named `fields` list beside it: EmDash's server counts named fields even when the collection lacks them, plus every translatable field of any type, and rejects the request above 32 (the admin's `.slice(0, 32)` doesn't save you). Widening either is a trust-contract change (version bump, admins re-consent).
 - Because `translatable` brings in fields we never named, `CODE_FIELD_WORDS` in `src/portable-text.ts` skips code-like slugs (`embed_code`, `custom_css`). Keep it whole-word, or `description` matches `script`.
 - Quote pairs come from CLDR (`cldr-json/cldr-misc-full/main/<tag>/delimiters.json`). Swedish/Finnish open and close with the same glyph; the quotes rule toggles depth for those.
 - Release versions are immutable.

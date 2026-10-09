@@ -23,7 +23,7 @@ Rules run in this order.
 | 9 | Quotes | on | `"x"` → `“x”`, `it's` → `it’s`, `'90s` → `’90s`, `'tis` → `’tis`, `'1984'` → `‘1984’` | already-curly quotes; a quote right after a number with no quote open (`12" pizza`, left for Primes) |
 | 10 | Non-breaking spaces | on | `10 kg`, `₹ 500`, `5 €`; French: narrow NBSP before `; ! ?` and inside `« »`, NBSP before `:` | `12:30`, `:)` |
 
-Never touched by any rule: inline `code` spans, code blocks, HTML blocks, URLs, emails, inline objects, images, embeds, non-text fields, the words you list under **Leave these words alone**, and fields whose name says they hold code or an identifier: any `_`-separated word of `code`, `html`, `css`, `js`, `javascript`, `script`, `json`, `schema`, `embed`, `iframe`, `svg`, `xml`, `markup`, `snippet`, `url`, `uri`, `href`, `link`, `canonical`, `email`, `phone`, `slug`, `sku`, `id`, `uuid`, `key`, `token`, `hash`, `regex`, `path`, `filename`, `color`, `colour` (so `embed_code` and `custom_css` are skipped; `description` is not).
+Never touched by any rule: inline `code` spans, code blocks, HTML blocks, URLs, emails, inline objects, images, embeds, non-text fields, the words you list under **Leave these words alone**, and fields whose name says they hold code or an identifier: any `_`-separated word of `code`, `html`, `css`, `js`, `javascript`, `script`, `scripts`, `json`, `jsonld`, `schema`, `embed`, `iframe`, `svg`, `xml`, `markup`, `snippet`, `class`, `classes`, `style`, `styles`, `url`, `uri`, `href`, `canonical`, `email`, `phone`, `slug`, `sku`, `id`, `uuid`, `token`, `hash`, `regex`, `filename`, `color`, `colour` (so `embed_code` and `custom_css` are skipped; `description` and `link_text` are not; `video_script` is skipped, to be safe).
 
 ## How to use
 
@@ -44,7 +44,7 @@ In the admin, open **Plugins** and click the gear (**Settings**) button on Typog
 
 - **Rule defaults** — which rules are pre-selected in the panel. On by default: spacing, symbols, ellipsis, dashes, quotes, non-breaking spaces. Off by default: ranges, multiplication, fractions, primes.
 - **Quote style** — `auto` (the entry's language, falling back to English) or a fixed language from the table below.
-- **Leave these words alone** — one word or phrase per line, such as `Rock 'n' Roll` or a product name. Upper and lower case count as the same. No rule changes anything inside a listed phrase. Up to 100 entries of up to 100 characters.
+- **Leave these words alone** — one word or phrase per line, such as `Rock 'n' Roll` or a product name. Upper and lower case count as the same, and an entry that starts or ends with a letter or digit only matches whole words (`X` doesn't match inside `1920x1080`). No rule changes anything inside a listed phrase. Up to 100 entries of up to 100 characters.
 
 ## Permissions
 
@@ -58,7 +58,7 @@ No network access, no content access outside the editor, no hooks, no content st
 ## Limits
 
 - The panel appears on these 64 collections: `posts`, `pages`, `projects`, `articles`, `news`, `blog`, `stories`, `docs`, `guides`, `tutorials`, `events`, `products`, `case_studies`, `portfolio`, `services`, `recipes`, `podcasts`, `episodes`, `faqs`, `testimonials`, `team`, `jobs`, `courses`, `lessons`, `changelog`, `press`, `resources`, `reviews`, their singular forms (`post`, `page`, `article`, …), and `notes`, `updates`, `announcements`, `documentation`, `knowledge_base`, `help`, `authors`, `people`, `locations`, `books`, `talks`, `videos`, `newsletters`, `landing_pages`. Collection names are fixed because EmDash plugin manifests cannot use wildcards; open an issue to add yours.
-- It reads and fixes every text, long-text and rich-text field EmDash marks as translatable (the default), plus these by name: `title`, `subtitle`, `headline`, `excerpt`, `summary`, `description`, `intro`, `lead`, `content`, `body`, `text`, `bio`, `abstract`, `caption`, `quote`, `question`, `answer`, `details`, `overview`. EmDash hands a panel at most 32 fields.
+- It reads and fixes every text, long-text and rich-text field that EmDash marks as translatable (the default for new fields), whatever its name. A field you switched to non-translatable is left out. EmDash refuses to hand over more than 32 fields, counting every translatable field of any type (images and dates too), so a collection with more than 32 of them can't be scanned.
 - A never-saved (new) entry must be saved once before the panel can scan it.
 - Very long fields can't be scanned at all: if any field is over 64 KB (or all of them together over 192 KB), EmDash doesn't hand the entry to the plugin. If fixing a field would push it over 64 KB, the panel warns and leaves that field alone.
 - Tables and custom blocks are not touched (EmDash 1.2 has no table block).

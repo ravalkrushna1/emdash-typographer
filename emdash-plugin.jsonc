@@ -91,16 +91,8 @@
 					"authors", "people", "locations", "books", "talks", "videos", "newsletters", "landing_pages"
 				],
 				"draft": {
-					"read": { "translatable": true, "fields": [
-						"title", "subtitle", "headline", "excerpt", "summary", "description",
-							"intro", "lead", "content", "body", "text", "bio", "abstract",
-							"caption", "quote", "question", "answer", "details", "overview"
-					] },
-					"patch": { "translatable": true, "fields": [
-						"title", "subtitle", "headline", "excerpt", "summary", "description",
-							"intro", "lead", "content", "body", "text", "bio", "abstract",
-							"caption", "quote", "question", "answer", "details", "overview"
-					] }
+					"read": { "translatable": true },
+					"patch": { "translatable": true }
 				}
 			}
 		]

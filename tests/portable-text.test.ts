@@ -171,7 +171,10 @@ describe("polishFields", () => {
 });
 
 describe("code-like fields", () => {
-	it.each(["embed_code", "custom_css", "json_ld", "content_html", "canonical_url", "sku", "hero_svg", "contact_email"])(
+	it.each([
+		"embed_code", "custom_css", "json_ld", "jsonld", "content_html", "canonical_url", "sku", "hero_svg", "contact_email",
+		"class_name", "custom_styles", "inline_style", "head_script",
+	])(
 		"skips %s, whose name says it holds code or an identifier",
 		(slug) => {
 			const { results } = polishFields({ [slug]: '"x" -- y' }, [{ slug, label: slug, type: "text" }], all, ctx, vi.fn());
@@ -180,7 +183,7 @@ describe("code-like fields", () => {
 		},
 	);
 
-	it.each(["description", "transcript", "post_body", "barcode_notes"])("still polishes %s", (slug) => {
+	it.each(["description", "transcript", "post_body", "barcode_notes", "key_takeaways", "link_text", "learning_path"])("still polishes %s", (slug) => {
 		const { results } = polishFields({ [slug]: '"x"' }, [{ slug, label: slug, type: "text" }], all, ctx, vi.fn());
 		expect(results[0]?.status).toBe("changed");
 	});
@@ -203,6 +206,16 @@ describe("never-touch words", () => {
 		const value = [block("b1", [span("s1", "the "), span("s2", "Yahoo", ["strong"]), span("s3", "!... site")])];
 		const result = polishPortableText(value, all, keep("Yahoo!..."));
 		expect(result.counts).toEqual({});
+	});
+
+	it("matches whole words only, so a short entry doesn't block fixes inside other words", () => {
+		expect(polishText("Brand X at 1920x1080", all, keep("X")).text).toBe("Brand X at 1920×1080");
+		expect(polishText(`"TM" and "X"`, all, keep("TM\nX")).text).toBe(`“TM” and “X”`);
+	});
+
+	it("lets an entry that starts or ends with punctuation match next to letters", () => {
+		expect(polishText("the Yahoo!... site", all, keep("Yahoo!...")).text).toBe("the Yahoo!... site");
+		expect(polishText("Go to (c)Corp now", all, keep("(c)")).text).toBe("Go to (c)Corp now");
 	});
 
 	it("treats regex characters literally", () => {

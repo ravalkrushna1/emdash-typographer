@@ -44,6 +44,7 @@ const URL_ONLY = new RegExp(URL_PATTERN, "giu");
 const URL_OR_EMAIL = new RegExp(String.raw`${URL_PATTERN}|[\w.+-]{1,64}@[\w-]{1,255}(?:\.[\w-]+)+`, "giu");
 const HAS_URL = /https?:\/\/|www\./i;
 
+const WORD_CHAR = /[\p{L}\p{N}]/u;
 const MAX_KEEP_ENTRIES = 100;
 const MAX_KEEP_LENGTH = 100;
 
@@ -56,7 +57,13 @@ export function keepPattern(list: string): RegExp | undefined {
 		.slice(0, MAX_KEEP_ENTRIES)
 		// Longest first, so "Rock 'n' Roll" wins over "Rock".
 		.sort((a, b) => b.length - a.length)
-		.map((line) => line.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"));
+		.map((line) => {
+			const escaped = line.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+			// Whole words only: "TM" must not freeze "(tm)", nor "X" freeze "1920x1080".
+			const start = WORD_CHAR.test(line[0] ?? "") ? "(?<![\\p{L}\\p{N}])" : "";
+			const end = WORD_CHAR.test(line.at(-1) ?? "") ? "(?![\\p{L}\\p{N}])" : "";
+			return `${start}${escaped}${end}`;
+		});
 	return entries.length > 0 ? new RegExp(entries.join("|"), "giu") : undefined;
 }
 
@@ -287,9 +294,10 @@ function fieldText(value: unknown): string {
 
 /** Slug words that mean the field holds code, markup or an identifier, not prose. */
 const CODE_FIELD_WORDS = new Set([
-	"code", "html", "css", "js", "javascript", "script", "json", "schema", "embed", "iframe", "svg", "xml",
-	"markup", "snippet", "url", "uri", "href", "link", "canonical", "email", "phone", "slug", "sku", "id",
-	"uuid", "key", "token", "hash", "regex", "path", "filename", "color", "colour",
+	"code", "html", "css", "js", "javascript", "script", "scripts", "json", "jsonld", "schema", "embed",
+	"iframe", "svg", "xml", "markup", "snippet", "class", "classes", "style", "styles", "url", "uri", "href",
+	"canonical", "email", "phone", "slug", "sku", "id", "uuid", "token", "hash", "regex", "filename", "color",
+	"colour",
 ]);
 
 const isCodeField = (slug: string) => slug.split("_").some((word) => CODE_FIELD_WORDS.has(word));

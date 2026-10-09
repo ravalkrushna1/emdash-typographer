@@ -88,6 +88,7 @@ describe("quotes", () => {
 		["the dogs'-only park", "the dogs’-only park"],
 		["'1984' is a novel", "‘1984’ is a novel"],
 		["She rated it '10' out of 10", "She rated it ‘10’ out of 10"],
+		["the '90's were fun", "the ’90’s were fun"],
 	])("changes %j → %j", (input, output) => expect(fix(quotes, input)).toBe(output));
 
 	it.each(["“already” ‘curly’", "no quotes here", `5'10"`, 'a 12" pizza', "the 12' boat"])("never touches %j", (input) =>
@@ -105,6 +106,7 @@ describe("quotes", () => {
 		["da", '"Hej"', "»Hej«"],
 		["ar", '"marhaba"', "“marhaba”"],
 		["sv", '”Hej” sa hon om en 12" pizza', '”Hej” sa hon om en 12" pizza'],
+		["sv", 'Den är 12” och 15" bred', 'Den är 12” och 15" bred'],
 		["sv", '"Hej" sa hon, "då"', "”Hej” sa hon, ”då”"],
 		["sv", '”Hej” sa hon, "då"', "”Hej” sa hon, ”då”"],
 		["sv", "Det är 'bra'", "Det är ’bra’"],

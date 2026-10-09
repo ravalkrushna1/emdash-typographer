@@ -271,4 +271,21 @@ describe("Typographer coverage", () => {
 		expect(JSON.stringify(patched.post_body)).toContain("Wait…");
 		expect(patched.embed_code).toBe(embed);
 	});
+
+	it("still scans a collection with many non-text fields", async () => {
+		host = await createPluginRuntimeTestHost({ i18n: { defaultLocale: "en", locales: ["en"] } });
+		const images = Array.from({ length: 20 }, (_, i) => ({ slug: `photo_${i}`, label: `Photo ${i}`, type: "image" as const }));
+		await host.fixtures.collection({
+			slug: "posts",
+			label: "Posts",
+			fields: [{ slug: "title", label: "Title", type: "string" }, ...images],
+		});
+		const entry = await host.fixtures.content("posts", { data: { title: "Saved" }, locale: "en" });
+		const draft = await host.admin.captureEditorDraft("posts", entry.id, { title: "It's" }, { contentLocale: "en" });
+		const proposal = await host.admin.submitEditorPanel(
+			"typographer", "posts", entry.id, "polish", { quotes: true }, { contentLocale: "en", draft },
+		);
+		const patched = await host.admin.applyEditorDraftPatch("panel", "typographer", draft, proposal, editorState(draft), draft.fields);
+		expect(patched.title).toBe("It’s");
+	});
 });

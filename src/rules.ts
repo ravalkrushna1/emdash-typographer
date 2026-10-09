@@ -81,7 +81,7 @@ function isApostrophe(text: string, i: number, afterOpening: boolean): boolean {
 	if (prev !== undefined && LETTER.test(prev) && WORDISH.test(next)) return true;
 	if (prev !== undefined && DIGIT.test(prev) && LETTER.test(next)) return true;
 	// '90s is an apostrophe, but '1984' is a quoted number.
-	return afterOpening && ((DIGIT.test(next) && !/^\d+['’]/.test(text.slice(i + 1))) || startsElision(text, i + 1));
+	return afterOpening && ((DIGIT.test(next) && !/^\d+['’](?!\p{L})/u.test(text.slice(i + 1))) || startsElision(text, i + 1));
 }
 
 /**
@@ -117,6 +117,7 @@ export const quotes: Rule = (text, { locale }) => {
 		}
 		if (ch !== '"' && ch !== "'") {
 			const [opener, closer] = glyphs[kind];
+			if (opener === closer && depth[kind] === 0 && prev !== undefined && DIGIT.test(prev)) continue; // 12” is an inch mark
 			// Swedish ” ” opens and closes with the same glyph: toggle.
 			const opensHere = opener === closer ? depth[kind] === 0 : ch === opener;
 			depth[kind] = opensHere ? depth[kind] + 1 : Math.max(0, depth[kind] - 1);
