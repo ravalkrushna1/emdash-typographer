@@ -18,12 +18,12 @@ Rules run in this order.
 | 4 | Dashes | on | `--` → `—`; ` - ` between words → ` – ` | `--flag` (also `"--flag"`, `(--flag)`), `---`, line-start hyphen |
 | 5 | Ranges | off | `10-20`, `1990-1995` → en dash | `2026-10-08`, `555-123-4567`, `B-52`, first ≥ second (e.g. `3-2`, `5-5`) |
 | 6 | Multiplication | off | `1920x1080`, `3 x 4` → `×` | `0x1F`, `X200x300` |
-| 7 | Fractions | off | `1/2 1/4 3/4 1/3 2/3` → `½ ¼ ¾ ⅓ ⅔` | `1/2/2026`, `11/2`, `1/20` |
+| 7 | Fractions | off | `1/2 1/4 3/4 1/3 2/3` → `½ ¼ ¾ ⅓ ⅔` | `1/2/2026`, `11/2`, `1/20`, `A1/2` |
 | 8 | Primes | off | `5'10"` → `5′10″`; `6' tall` → `6′ tall` | a closing quote after a number (`"I am 10"`) |
-| 9 | Quotes | on | `"x"` → `“x”`, `it's` → `it’s`, `'90s` → `’90s`, `'tis` → `’tis` | already-curly quotes; a quote right after a number with no quote open (`12" pizza`, left for Primes) |
+| 9 | Quotes | on | `"x"` → `“x”`, `it's` → `it’s`, `'90s` → `’90s`, `'tis` → `’tis`, `'1984'` → `‘1984’` | already-curly quotes; a quote right after a number with no quote open (`12" pizza`, left for Primes) |
 | 10 | Non-breaking spaces | on | `10 kg`, `₹ 500`, `5 €`; French: narrow NBSP before `; ! ?` and inside `« »`, NBSP before `:` | `12:30`, `:)` |
 
-Never touched by any rule: inline `code` spans, code blocks, HTML blocks, URLs, emails, inline objects, images, embeds, tables, non-text fields.
+Never touched by any rule: inline `code` spans, code blocks, HTML blocks, URLs, emails, inline objects, images, embeds, non-text fields, the words you list under **Leave these words alone**, and fields whose name says they hold code or an identifier: any `_`-separated word of `code`, `html`, `css`, `js`, `javascript`, `script`, `json`, `schema`, `embed`, `iframe`, `svg`, `xml`, `markup`, `snippet`, `url`, `uri`, `href`, `link`, `canonical`, `email`, `phone`, `slug`, `sku`, `id`, `uuid`, `key`, `token`, `hash`, `regex`, `path`, `filename`, `color`, `colour` (so `embed_code` and `custom_css` are skipped; `description` is not).
 
 ## How to use
 
@@ -44,6 +44,7 @@ In the admin, open **Plugins** and click the gear (**Settings**) button on Typog
 
 - **Rule defaults** — which rules are pre-selected in the panel. On by default: spacing, symbols, ellipsis, dashes, quotes, non-breaking spaces. Off by default: ranges, multiplication, fractions, primes.
 - **Quote style** — `auto` (the entry's language, falling back to English) or a fixed language from the table below.
+- **Leave these words alone** — one word or phrase per line, such as `Rock 'n' Roll` or a product name. Upper and lower case count as the same. No rule changes anything inside a listed phrase. Up to 100 entries of up to 100 characters.
 
 ## Permissions
 
@@ -56,13 +57,11 @@ No network access, no content access outside the editor, no hooks, no content st
 
 ## Limits
 
-- The panel appears only on these collections (28): `posts`, `pages`, `projects`, `articles`, `news`, `blog`, `stories`, `docs`, `guides`, `tutorials`, `events`, `products`, `case_studies`, `portfolio`, `services`, `recipes`, `podcasts`, `episodes`, `faqs`, `testimonials`, `team`, `jobs`, `courses`, `lessons`, `changelog`, `press`, `resources`, `reviews`.
-- It reads and fixes only these fields (19): `title`, `subtitle`, `headline`, `excerpt`, `summary`, `description`, `intro`, `lead`, `content`, `body`, `text`, `bio`, `abstract`, `caption`, `quote`, `question`, `answer`, `details`, `overview`.
+- The panel appears on these 64 collections: `posts`, `pages`, `projects`, `articles`, `news`, `blog`, `stories`, `docs`, `guides`, `tutorials`, `events`, `products`, `case_studies`, `portfolio`, `services`, `recipes`, `podcasts`, `episodes`, `faqs`, `testimonials`, `team`, `jobs`, `courses`, `lessons`, `changelog`, `press`, `resources`, `reviews`, their singular forms (`post`, `page`, `article`, …), and `notes`, `updates`, `announcements`, `documentation`, `knowledge_base`, `help`, `authors`, `people`, `locations`, `books`, `talks`, `videos`, `newsletters`, `landing_pages`. Collection names are fixed because EmDash plugin manifests cannot use wildcards; open an issue to add yours.
+- It reads and fixes every text, long-text and rich-text field EmDash marks as translatable (the default), plus these by name: `title`, `subtitle`, `headline`, `excerpt`, `summary`, `description`, `intro`, `lead`, `content`, `body`, `text`, `bio`, `abstract`, `caption`, `quote`, `question`, `answer`, `details`, `overview`. EmDash hands a panel at most 32 fields.
 - A never-saved (new) entry must be saved once before the panel can scan it.
-- Very long fields can't be scanned at all: if any of these fields is over 64 KB (or all of them together over 192 KB), EmDash doesn't hand the entry to the plugin. If fixing a field would push it over 64 KB, the panel warns and leaves that field alone.
-- Tables and custom blocks are not touched in v1.
-
-The lists are fixed because EmDash plugin manifests cannot use wildcards.
+- Very long fields can't be scanned at all: if any field is over 64 KB (or all of them together over 192 KB), EmDash doesn't hand the entry to the plugin. If fixing a field would push it over 64 KB, the panel warns and leaves that field alone.
+- Tables and custom blocks are not touched (EmDash 1.2 has no table block).
 
 ## Languages
 
@@ -70,14 +69,22 @@ Quote style swaps glyphs only: what you typed as double becomes the language's d
 
 | Language | Double | Single |
 |---|---|---|
-| en, nl, hi, gu, zh | “ ” | ‘ ’ |
+| en, nl, hi, gu, mr, ta, bn, zh, ko, tr | “ ” | ‘ ’ |
 | fr | « » | ‹ › |
-| es, it, pt | « » | “ ” |
-| ru | « » | „ “ |
+| es, it, pt, el | « » | “ ” |
+| ru, uk | « » | „ “ |
+| nb, no, nn | « » | ‘ ’ |
 | de | „ “ | ‚ ‘ |
+| cs, sk | „ “ | ‚ ‘ |
+| bg | „ “ | „ “ |
 | pl | „ ” | « » |
+| ro | „ ” | « » |
+| hu | „ ” | » « |
+| sv, fi | ” ” | ’ ’ |
 | ja | 「 」 | 『 』 |
 | da | » « | › ‹ |
+
+Pairs follow the Unicode CLDR locale data. French also gets its spacing rules (see Non-breaking spaces above).
 
 ## Reporting a security issue
 

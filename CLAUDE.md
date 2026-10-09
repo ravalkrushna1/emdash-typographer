@@ -14,7 +14,9 @@ Rules (`src/rules.ts`) return edits against one joined paragraph string; the eng
 
 ## Traps
 
-- Manifest `collections` and draft `fields` cannot be wildcards; widening them is a trust-contract change (version bump, admins re-consent).
+- Manifest `collections` cannot be wildcards (max 64). Draft access uses named `fields` plus `"translatable": true`, which EmDash (admin and server) resolves to every supported translatable field, capped at 32. Widening either is a trust-contract change (version bump, admins re-consent).
+- Because `translatable` brings in fields we never named, `CODE_FIELD_WORDS` in `src/portable-text.ts` skips code-like slugs (`embed_code`, `custom_css`). Keep it whole-word, or `description` matches `script`.
+- Quote pairs come from CLDR (`cldr-json/cldr-misc-full/main/<tag>/delimiters.json`). Swedish/Finnish open and close with the same glyph; the quotes rule toggles depth for those.
 - Release versions are immutable.
 - No zod. plugin-cli 0.13.3 only bundles the exact `"zod"` specifier and full zod nearly hit the 128 KB per-file cap, so input is validated by hand-written guards.
 - Write invisible characters (U+00A0, U+202F, U+FFFC) as backslash escapes. Literal ones get lost in copy/paste and silently break tests.

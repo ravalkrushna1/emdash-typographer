@@ -213,7 +213,23 @@ Tooling: pnpm (the plugin CLI and docs assume it), `@emdash-cms/plugin-cli` pinn
 exactly (0.13.3 at time of writing; registry is experimental). Listing images in
 `images/`, never root `icon.png` (counts against the bundle cap).
 
+## 1.1 (2026-10-09)
+
+| Change | Decision | Why |
+|---|---|---|
+| Field coverage | Draft `read`/`patch` keep the 19 named fields **and** add `"translatable": true` | EmDash resolves `translatable` to every supported field whose `translatable` flag is set, and that flag defaults to on, so custom names like `post_body` now work. The named list stays so a field someone marked non-translatable is still covered. Both the admin and the server apply the same selector and cap it at 32 fields. |
+| Collections | 64 names (the manifest maximum), adding singular forms and common extras | Collections cannot use wildcards; a site calling its collection `article` saw no panel. |
+| Code-like fields | Skip any field whose slug has a word (split on `_`) from `CODE_FIELD_WORDS` (`code`, `html`, `css`, `json`, `embed`, `url`, `email`, `slug`, `sku`, `id`, …) | `translatable` now brings in fields we never chose. Curly quotes in `embed_code` or `custom_css` would break the site. Whole-word matching keeps `description` and `transcript`. No per-site setting yet; the preview is the backstop. |
+| Never-touch words | `keep` setting: multi-line string, one phrase per line, case-insensitive literal match, max 100 entries of max 100 characters. Matches join the protected ranges, the same path as URLs | Brand names and quoted titles (`Rock 'n' Roll`) must stay as typed. Rules still see the protected text, so quote pairing around it stays correct. The caps keep the worst case at a few ms on a 64 KB field. |
+| Quoted numbers | `'` then digits then `'` opens a quote (`'1984'` → `‘1984’`); `'90s` is still an apostrophe | It used to give `’1984'`. |
+| Fractions | A letter before the digit blocks it (`A1/2`) | Product and part codes. |
+| Locales | +17 from CLDR delimiters: sv fi nb no nn cs sk hu tr ko uk el ro bg mr ta bn | Data only. Swedish/Finnish use one glyph for open and close, so counting an existing one toggles instead of always opening. Bulgarian uses „ “ for both levels, so nesting depth there is approximate (output is still correct). |
+| Trust contract | Version 1.1.0; admins re-consent on upgrade | Reading more fields widens what the plugin sees. |
+
+Left out: tables (EmDash 1.2 has no table block), a "fields to skip" setting, right-to-left languages.
+
 ## Roadmap
 
-- 1.1: tables; per-locale dash style (closed em dash vs spaced en dash); more locales.
+- Per-locale dash style (closed em dash vs spaced en dash).
+- A "fields to skip" setting if the built-in list misses real sites.
 - Later: House Style plugin reusing this engine with a team glossary.
